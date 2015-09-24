@@ -14,7 +14,7 @@ def run_time(func):
         start_time = time.time()
         result = func(*args, **kw)
         end_time = time.time()
-        print "Computation time: %s in fucntion %s" % (end_time - start_time, func.__name__)
+        print "Computation time: %s in Function %s" % (end_time - start_time, func.__name__)
         return result
     return wrapper
 
@@ -91,7 +91,7 @@ def store_in_memory(dataset, graphe_n, graphe_dg):
             index_table[i] += 1
             storage_table[index_j] = i
             index_table[j] += 1
-        #print storage_table
+        print storage_table
 
 # exercise_5
 @run_time
@@ -145,7 +145,7 @@ def del_loop(raw_dataset, prelmry_dataset):
 
 # a combination work of exercise 3 - 7
 @run_time
-def compute_app(dataset, file_n, file_dg):
+def compute_all(dataset, file_n, file_dg):
     compute_node_number(dataset, file_n)
     compute_node_degree(dataset, file_n, file_dg)
     store_in_memory(dataset, file_n, file_dg)
@@ -175,16 +175,14 @@ if __name__  == "__main__":
     compute_degree_distribution(graphe_dg)
     # exercise 7
     del_loop(dataset, processed_dataset) # this is my own dataset
-    
-    
 
     # dataset from drosophila_PPI.txt
     dataset_sophia = 'drosophila_PPI.txt'
     processed_dataset_sophia = 'processed_dataset_sophia.txt'
     del_loop(dataset_sophia, processed_dataset_sophia) # drosophila dataset
-    n_s = 'sophia_grahpe.n'
+    n_s = 'sophia_graphe.n'
     dg_s = 'sophia_graphe.dg'
-    d_s = compute_app(processed_dataset_sophia, n_s, dg_s)
+    d_s = compute_all(processed_dataset_sophia, n_s, dg_s)
     plt.scatter(d_s.keys(), d_s.values())
     plt.xscale('log')
     plt.yscale('log')
@@ -194,9 +192,9 @@ if __name__  == "__main__":
     dataset_inet = 'inet.txt'
     processed_dataset_inet = 'processed_dataset_inet.txt'
     del_loop(dataset_inet, processed_dataset_inet)
-    n_i = 'inet_grahpe.n'
+    n_i = 'inet_graphe.n'
     dg_i = 'inet_graphe.dg'
-    d_i = compute_app(processed_dataset_inet, n_i, dg_i)
+    d_i = compute_all(processed_dataset_inet, n_i, dg_i)
     plt.scatter(d_i.keys(), d_i.values())
     plt.axis([1, 100, 1, 10000])
     plt.xscale('log')
