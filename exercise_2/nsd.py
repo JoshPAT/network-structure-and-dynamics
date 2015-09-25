@@ -21,7 +21,7 @@ def run_time(func):
 
 # exercise_2
 @run_time
-def compute_node_number(dataset, output_n):
+def compute_node_number(dataset, output_n = False):
     with open(dataset, 'r') as f:
         maxn = 0
         for line in f.readlines():
@@ -30,24 +30,18 @@ def compute_node_number(dataset, output_n):
                 maxn = i
             if j > maxn:
                 maxn = j                  
-    with open(output_n,'w') as graphe_n_file:
-        graphe_n_file.write(str(maxn))
-
+    if output_n:
+        with open(output_n,'w') as graphe_n_file:
+            graphe_n_file.write(str(maxn))
+    else:
+        return maxn
 
 # exercise_3
 @run_time
-def compute_node_degree(dataset, graphe_n, graphe_dg):
+def compute_node_degree(dataset, graphe_n, graphe_dg = False):
     with open(graphe_n, 'r') as fn:
         n = int(fn.read())
     with open(dataset, 'r') as f:
-        '''
-        dg_table = [0] * (n+1)
-        index = [str(x) for x in xrange(n+1)]
-        for line in f.readlines():
-            for e in line.strip().split(' '):
-                if e in index:
-                    dg_table[int(e)] += 1
-        '''
         dg_table = {}
         for x in xrange(n+1):
             dg_table[x] = 0
@@ -57,9 +51,12 @@ def compute_node_degree(dataset, graphe_n, graphe_dg):
                     dg_table[int(e)] += 1
                 else:
                     dg_table[int(e)] = 1
-    with open(graphe_dg, 'w') as graphe_dg_file:
-        for dg in dg_table.values():
-            graphe_dg_file.write('%s\n' % dg)
+    if graphe_dg:
+        with open(graphe_dg, 'w') as graphe_dg_file:
+            for dg in dg_table.values():
+                graphe_dg_file.write('%s\n' % dg)
+    else:
+        return dg_table
 
 # exercise_4
 @run_time
@@ -168,6 +165,17 @@ def compute_all(dataset, file_n, file_dg, file_dn):
     dg_c = cumlative_degree_distribution(dg)
     return [dg, dg_c]
 
+def make_plot(plot1, plot2):
+    f, (ax1, ax2) = plt.subplots(1, 2, sharex=True)
+    ax1.scatter(plot1.keys(), plot1.values())
+    ax1.axis([1, 1000, 1, 10000])
+    ax1.set_xscale('log')
+    ax1.set_yscale('log')
+    ax2.scatter(plot2.keys(), plot2.values())
+    ax2.set_xscale('log')
+    ax2.set_yscale('log')
+    plt.show()
+
 if __name__  == "__main__":
     # test files
     dataset = 'dataset.txt'
@@ -195,19 +203,9 @@ if __name__  == "__main__":
     n_s = 'sophia_graphe.n'
     dg_s = 'sophia_graphe.dg'
     dn_s = 'sophia_graphe.dn'
-    d_s, d_s_c = compute_all(processed_dataset_sophia, n_s, dg_s, dn_s)
     
-    f, (ax1, ax2) = plt.subplots(1, 2, sharex=True)
-    ax1.scatter(d_s.keys(), d_s.values())
-    ax1.axis([1, 1000, 1, 10000])
-    ax1.set_xscale('log')
-    ax1.set_yscale('log')
-    ax2.scatter(d_s_c.keys(), d_s_c.values())
-    ax2.set_xscale('log')
-    ax2.set_yscale('log')
-    plt.show()
-
-
+    d_s, d_s_c = compute_all(processed_dataset_sophia, n_s, dg_s, dn_s)
+    make_plot(d_s, d_s_c)
 
     # dataset from inet.txt
     dataset_inet = 'inet.txt'
@@ -216,14 +214,7 @@ if __name__  == "__main__":
     n_i = 'inet_graphe.n'
     dg_i = 'inet_graphe.dg'
     dn_i = 'inet_graphe.dn'
+    
     d_i, d_i_c = compute_all(processed_dataset_inet, n_i, dg_i, dn_i)
-    f, (ax1, ax2) = plt.subplots(1, 2, sharex=True)
-    ax1.scatter(d_i.keys(), d_i.values())
-    ax1.axis([1, 1000, 1, 10000])
-    ax1.set_xscale('log')
-    ax1.set_yscale('log')
-    ax2.scatter(d_i_c.keys(), d_i_c.values())
-    ax2.set_xscale('log')
-    ax2.set_yscale('log')
-    plt.show()
+    make_plot(d_i, d_i_c)
         
