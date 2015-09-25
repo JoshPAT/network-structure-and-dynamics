@@ -5,7 +5,8 @@
 This program is about Part 2 'Basic operations and properties'.
 '''
 
-import functools ,time
+import functools ,time, itertools
+import matplotlib.pyplot as plt
 
 # a dectorator used to compute run time in a fucntion
 def run_time(func):
@@ -116,7 +117,7 @@ def compute_all_degree(graphe_dg):
 
 # exercise_6
 @run_time
-def compute_degree_distribution(graphe_dg):
+def compute_degree_distribution(graphe_dg, graphe_dn):
     with open(graphe_dg, 'r') as f:
         d = {}
         for line in f.readlines():
@@ -124,8 +125,11 @@ def compute_degree_distribution(graphe_dg):
             if dg in d:
                 d[dg] += 1
             else:
-                d[dg] = 1    
-        return d
+                d[dg] = 1
+    with open(graphe_dn, 'w') as f:
+        for degree, node in d.iteritems():
+            f.write('%s %s\n' % (degree , node))
+    return d
 
 # exercise_7
 @run_time
@@ -143,36 +147,44 @@ def del_loop(raw_dataset, prelmry_dataset):
             i, j = n[0], n[1]
             fp.write('%s %s\n' % (i, j))
 
+# exercise_8
+@run_time
+def cumlative_degree_distribution(dg_dict):
+    c = 0
+    dg_c = dg_dict.copy()
+    for d in sorted(dg_c.keys()):
+        c = dg_c[d] + c
+        dg_c[d] = c
+    return dg_c
+
 # a combination work of exercise 3 - 7
 @run_time
-def compute_all(dataset, file_n, file_dg):
+def compute_all(dataset, file_n, file_dg, file_dn):
     compute_node_number(dataset, file_n)
     compute_node_degree(dataset, file_n, file_dg)
     store_in_memory(dataset, file_n, file_dg)
     compute_all_degree(file_dg)
-    dg = compute_degree_distribution(file_dg)
-    return dg
+    dg = compute_degree_distribution(file_dg, file_dn)
+    dg_c = cumlative_degree_distribution(dg)
+    return [dg, dg_c]
 
 if __name__  == "__main__":
-    import time
-    import itertools
-    import matplotlib.pyplot as plt
-    start_time = time.clock()
     # test files
     dataset = 'dataset.txt'
     graphe_n = 'graphe.n'
     graphe_dg = 'graphe.dg'
+    graphe_dn = 'graphe.dn'
     processed_dataset = 'processed_dataset.txt'
     # exercise 2
     compute_node_number(dataset, graphe_n)
     # exercise 3
     compute_node_degree(dataset, graphe_n, graphe_dg)
     # exercise 4
-    #store_in_memory(dataset, graphe_n, graphe_dg)
+    store_in_memory(dataset, graphe_n, graphe_dg)
     # exercise 5
     compute_all_degree(graphe_dg)
     # exercise 6
-    compute_degree_distribution(graphe_dg)
+    compute_degree_distribution(graphe_dg, graphe_dn)
     # exercise 7
     del_loop(dataset, processed_dataset) # this is my own dataset
 
@@ -182,11 +194,20 @@ if __name__  == "__main__":
     del_loop(dataset_sophia, processed_dataset_sophia) # drosophila dataset
     n_s = 'sophia_graphe.n'
     dg_s = 'sophia_graphe.dg'
-    d_s = compute_all(processed_dataset_sophia, n_s, dg_s)
-    plt.scatter(d_s.keys(), d_s.values())
-    plt.xscale('log')
-    plt.yscale('log')
+    dn_s = 'sophia_graphe.dn'
+    d_s, d_s_c = compute_all(processed_dataset_sophia, n_s, dg_s, dn_s)
+    
+    f, (ax1, ax2) = plt.subplots(1, 2, sharex=True)
+    ax1.scatter(d_s.keys(), d_s.values())
+    ax1.axis([1, 1000, 1, 10000])
+    ax1.set_xscale('log')
+    ax1.set_yscale('log')
+    ax2.scatter(d_s_c.keys(), d_s_c.values())
+    ax2.set_xscale('log')
+    ax2.set_yscale('log')
     plt.show()
+
+
 
     # dataset from inet.txt
     dataset_inet = 'inet.txt'
@@ -194,12 +215,15 @@ if __name__  == "__main__":
     del_loop(dataset_inet, processed_dataset_inet)
     n_i = 'inet_graphe.n'
     dg_i = 'inet_graphe.dg'
-    d_i = compute_all(processed_dataset_inet, n_i, dg_i)
-    plt.scatter(d_i.keys(), d_i.values())
-    plt.axis([1, 100, 1, 10000])
-    plt.xscale('log')
-    plt.yscale('log')
-    plt.show()   
-
-    
+    dn_i = 'inet_graphe.dn'
+    d_i, d_i_c = compute_all(processed_dataset_inet, n_i, dg_i, dn_i)
+    f, (ax1, ax2) = plt.subplots(1, 2, sharex=True)
+    ax1.scatter(d_i.keys(), d_i.values())
+    ax1.axis([1, 1000, 1, 10000])
+    ax1.set_xscale('log')
+    ax1.set_yscale('log')
+    ax2.scatter(d_i_c.keys(), d_i_c.values())
+    ax2.set_xscale('log')
+    ax2.set_yscale('log')
+    plt.show()
         
