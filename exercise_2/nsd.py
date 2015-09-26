@@ -5,7 +5,7 @@
 This program is about Part 2 'Basic operations and properties'.
 '''
 
-import functools ,time, itertools
+import functools ,time, itertools, operator
 import matplotlib.pyplot as plt
 
 # a dectorator used to compute run time in a fucntion
@@ -137,10 +137,8 @@ def del_loop(raw_dataset, prelmry_dataset):
             i, j = [int(x) for x in line.strip().split(' ')] 
             if i != j:
                 raw_list.append([i, j] if i >j else [j, i])
-    raw_list.sort()
-    prelmry_list = list(raw_list for raw_list,_ in itertools.groupby(raw_list))
     with open(prelmry_dataset, 'w') as fp:
-        for n in prelmry_list:
+        for n in sorted(raw_list):
             i, j = n[0], n[1]
             fp.write('%s %s\n' % (i, j))
 
@@ -165,10 +163,11 @@ def compute_all(dataset, file_n, file_dg, file_dn):
     dg_c = cumlative_degree_distribution(dg)
     return [dg, dg_c]
 
-def make_plot(plot1, plot2):
+@run_time
+def make_plot(plot1, plot2, axis = [1, 1000, 1, 10000]):
     f, (ax1, ax2) = plt.subplots(1, 2, sharex=True)
     ax1.scatter(plot1.keys(), plot1.values())
-    ax1.axis([1, 1000, 1, 10000])
+    ax1.axis(axis)
     ax1.set_xscale('log')
     ax1.set_yscale('log')
     ax2.scatter(plot2.keys(), plot2.values())
@@ -177,7 +176,6 @@ def make_plot(plot1, plot2):
     plt.show()
 
 if __name__  == "__main__":
-    # test files
     dataset = 'dataset.txt'
     graphe_n = 'graphe.n'
     graphe_dg = 'graphe.dg'
@@ -217,4 +215,3 @@ if __name__  == "__main__":
     
     d_i, d_i_c = compute_all(processed_dataset_inet, n_i, dg_i, dn_i)
     make_plot(d_i, d_i_c)
-        

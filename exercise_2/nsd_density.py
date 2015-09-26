@@ -11,6 +11,7 @@ try:
     import nsd
 except ImportError:
     print 'make sure file nsd.py is in same folder'
+
 # used to count combination (n r)
 def nCr(n,r):
     f = math.factorial
@@ -45,6 +46,7 @@ def compute_cluster_coefficient(dataset):
             nv = 0
     return cc
 
+# exercise 10
 @nsd.run_time
 def compute_triangle_number(dataset):
     n = int(nsd.compute_node_number(dataset))
