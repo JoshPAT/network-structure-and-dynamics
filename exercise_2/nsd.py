@@ -19,6 +19,7 @@ def run_time(func):
         return result
     return wrapper
 
+
 # exercise_2
 @run_time
 def compute_node_number(dataset, output_n = False):
@@ -42,9 +43,7 @@ def compute_node_degree(dataset, graphe_n, graphe_dg = False):
     with open(graphe_n, 'r') as fn:
         n = int(fn.read())
     with open(dataset, 'r') as f:
-        dg_table = {}
-        for x in xrange(n+1):
-            dg_table[x] = 0
+        dg_table = {x:0 for x in xrange(n+1)}
         for line in f.readlines():
             for e in line.strip().split(' '):
                 if dg_table[int(e)] != 0:
@@ -68,9 +67,7 @@ def store_in_memory(dataset, graphe_n, graphe_dg):
         for line in fdg.readlines():
             dg_table.append(int(line.strip()))
     with open(dataset, 'r') as f:
-        '''
-        store the table in 'array list' way
-        '''
+        
         # build two empty tables
         storage_table = [0] * sum(dg_table)
         # build the index table for storage table 
@@ -152,6 +149,7 @@ def cumlative_degree_distribution(dg_dict):
         dg_c[d] = c
     return dg_c
 
+
 # a combination work of exercise 3 - 7
 @run_time
 def compute_all(dataset, file_n, file_dg, file_dn):
@@ -192,8 +190,11 @@ if __name__  == "__main__":
     # exercise 6
     compute_degree_distribution(graphe_dg, graphe_dn)
     # exercise 7
-    del_loop(dataset, processed_dataset) # this is my own dataset
+    del_loop(dataset, processed_dataset)
 
+    compute_all(dataset, graphe_n, graphe_dg, graphe_dn)
+     # this is my own dataset
+    '''
     # dataset from drosophila_PPI.txt
     dataset_sophia = 'drosophila_PPI.txt'
     processed_dataset_sophia = 'processed_dataset_sophia.txt'
@@ -204,7 +205,7 @@ if __name__  == "__main__":
     
     d_s, d_s_c = compute_all(processed_dataset_sophia, n_s, dg_s, dn_s)
     make_plot(d_s, d_s_c)
-
+    '''
     # dataset from inet.txt
     dataset_inet = 'inet.txt'
     processed_dataset_inet = 'processed_dataset_inet.txt'
