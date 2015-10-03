@@ -10,7 +10,7 @@ __author__ = 'Josh zhou'
 This program is about Part 2 'Basic operations and properties'.
 '''
 
-import functools ,time, itertools, operator, math
+import functools ,time, itertools, operator, math, datasets
 import matplotlib.pyplot as plt
 
 # a dectorator used to compute run time in a fucntion
@@ -31,18 +31,19 @@ def nCr(n,r):
 
 class Graph(object):
     '''
-    a graph contains info
+    a graph contains infos about node number, degree, neighours tables of node,
+    degree distrubition, and its cumlative degree distribution.
     '''
     def __init__(self, dataset = None):
-
+        self.datasetpath = datasets.__path__[0] + '/'
         self.dataset = []
-        self.process_dataset(dataset)
+        self.process_dataset(self.datasetpath + dataset) 
 
-        self.node_file = dataset.split('.')[0] + '_graphe.n'
+        self.node_file = self.datasetpath + dataset.split('.')[0] + '_graphe.n'
         self.node_number = 0
         self.compute_node_number()
 
-        self.degree_file = dataset.split('.')[0] + '_graphe.dg'
+        self.degree_file = self.datasetpath + dataset.split('.')[0] + '_graphe.deg'
         self.degree_table = []
         
         # key is No. node, value is its neighbour nodes 
@@ -52,13 +53,14 @@ class Graph(object):
 
         # key is degree, value is number of nodes
         self.degree_distribution = {}
-        self.degree_distribution_file = dataset.split('.')[0] + '_graphe.dn'
+        self.degree_distribution_file = self.datasetpath + dataset.split('.')[0] + '_graphe.dn'
 
         self.cum_degree_distribution = {}
+        
 
 
     # exercise_2 : compute the number of nodes
-    @run_time
+    #@run_time
     def compute_node_number(self):
         l = []
         for element in self.dataset:
@@ -69,7 +71,7 @@ class Graph(object):
         self.node_number = max(l)
     
     # exercise_3 : compute the degree of each node
-    @run_time
+    #@run_time
     def compute_node_degree(self):
         self.degree_table = [0] * (self.node_number + 1)
         for element in self.dataset:
@@ -83,7 +85,7 @@ class Graph(object):
                 fd.write('%s\n' % n)
     
     # exercise_4 : store in the memory
-    @run_time
+    #@run_time
     def store_in_memory(self):
         self.graph_in_memory = [0] * sum(self.degree_table)
         # build the index table for storage table 
@@ -106,16 +108,16 @@ class Graph(object):
         return self.graph_in_memory
 
     # exercise_5 : compute some infos about graph
-    @run_time
+    #@run_time
     def graph_infos(self):
-        print 'Numbers of degree 0: %s' % self.degree_table.count(0)
+        print 'Numbers of degree 0: %s' % self.degree_table.count(0) 
         print 'Max Degree: %s' % max(self.degree_table) 
         print 'Min Degree: %s' % min(self.degree_table)
         print 'Average Degree: %s' % (sum(self.degree_table) * 1.0 / len(self.degree_table))
         print 'Density of graph: %s' % (1.0 * sum(self.degree_table) / (len(self.degree_table) * (len(self.degree_table) - 1)))
 
     # exercise_6 : compute the degree distrubition
-    @run_time
+    #@run_time
     def compute_degree_distribution(self):
         for degree in self.degree_table:
             if degree in self.degree_distribution:
@@ -127,7 +129,7 @@ class Graph(object):
                 f.write('%s %s\n' % (degree , node))
 
     # exercise_7 : delete loop & duplicate element like (i,j) & (j,i) 
-    @run_time
+    #@run_time
     def process_dataset(self, dataset):
         with open(dataset, 'r') as f:
             l = []
@@ -140,18 +142,19 @@ class Graph(object):
         return self.dataset
 
     # exercise_8 : compute the cumlative degree distribution
-    @run_time
+    #@run_time
     def cumlative_degree_distribution(self):
         self.cum_degree_distribution = self.degree_distribution.copy()
         # link copy and cum_degree_distribution just for easily reading
         copy = self.cum_degree_distribution
         n = 0 #inital nodes = 0
-        for degree in sorted(copy.keys()):
+        
+        for degree in reversed(sorted(copy.keys())):
             n = copy[degree] + n # add nodes has bigger degree to previous nodes
             copy[degree] = n
         return self.cum_degree_distribution
 
-    @run_time
+    #@run_time
     def compute_nodes_dict(self):
         self.nodes_dict = {n:[] for n in xrange(self.node_number + 1)}
         for element in self.dataset:
@@ -160,20 +163,26 @@ class Graph(object):
             self.nodes_dict[j].append(i)
         return self.nodes_dict
 
-    @run_time
+    #@run_time
     def make_plot(self):
         plot1, plot2 = self.degree_distribution, self.cum_degree_distribution
-        f, (ax1, ax2) = plt.subplots(1, 2, sharex=True)
+        f, (ax1, ax2) = plt.subplots(1, 2, sharex=True, sharey = True, figsize=(14, 6))
         ax1.scatter(plot1.keys(), plot1.values())
         ax1.axis([1, 1000, 1, 10000])
         ax1.set_xscale('log')
+        ax1.set_xlabel('Number of nodes', fontsize = 14)
         ax1.set_yscale('log')
+        ax1.set_ylabel('Degree', fontsize = 14)
+        ax1.set_title('Degree Distribution')
         ax2.scatter(plot2.keys(), plot2.values())
+        ax2.set_xlabel('Number of nodes', fontsize = 14)
+        ax2.set_ylabel('Degree', fontsize = 14)
         ax2.set_xscale('log')
         ax2.set_yscale('log')
+        ax2.set_title('Cumulative Degree Distribution')
         plt.show()
 
-    @run_time
+    #@run_time
     def compute_all(self):
         self.compute_node_number()
         print self.node_number
@@ -186,14 +195,15 @@ class Graph(object):
         self.cumlative_degree_distribution()
         print self.cum_degree_distribution
         self.compute_nodes_dict()
+        print self.nodes_dict
 
 # exercise_10 : compute cluster coefficient and transitive ratio for each node 
 @run_time
-def compute_density(graph):
+def compute_triangle_values(graph):
     cc, tr = [], 0
     num_v, num_tri, sum_tri = 0, 0, 0
     for n, v in graph.nodes_dict.iteritems():
-        if v == []:
+        if not v:
             cc.append('Undefined') # cc of node without connection should be undefined
         elif len(v) == 1:
             cc.append(0.0) # 1 neighbour => no value
@@ -209,119 +219,180 @@ def compute_density(graph):
             cc.append((2 * num_tri)/ (len(v) * (len(v) - 1) )) 
             num_tri = 0     
     tr = sum_tri / num_v
-    print cc
-    print tr
+    print 'clustering coefficient:', cc
+    print 'transitive ratio: %0.11f' % tr
 
 
-# exercise_11 : show the BFS of graph
 
-def bfs(graph, s):
-    discovered = {}
-    level = [s]
-    discovered[s] = 0
-    while len(level) > 0:
-        next_level = []
-        for u1 in level:
-            for u2 in graph.nodes_dict[u1]:
-                if u2 not in discovered:
-                    discovered[u2] = discovered[u1] + 1
-                    next_level.append(u2)
-        level = next_level
-    sorted_discovered = sorted(discovered.items(), key = operator.itemgetter(1))
-    print ['%d => %d ' % (k, v ) for v, k in sorted_discovered]
+class Bfs(object):
+    '''
+    this class is used to compute shortest path route and numbers of
+    the shortest path and betweenness centrality of a a graph.
 
-# exercise_12 : compute the 
 
-def compute_size(graph):
-    discovered = [None] * len(graph.nodes_dict.keys()) 
-    for x,_ in enumerate(discovered):
-        if discovered[x] is None:
-            if not graph.nodes_dict[x]:
-                discovered[x] = 'connectless'
+    '''
+    def __init__(self, graph):
+        self.graph = graph
+        self.biggest_component = []
+
+    # exercise_11 : show the BFS of graph
+    #@run_time
+    def bfs(self, s):
+        discovered = {s: 0}
+        level = [s]
+        while len(level) > 0:
+            next_level = []
+            for u1 in level:
+                for u2 in self.graph.nodes_dict[u1]:
+                    if u2 not in discovered:
+                        discovered[u2] = u1
+                        next_level.append(u2)
+            level = next_level
+        
+        #sorted_discovered = sorted(discovered.items(), key = operator.itemgetter(1))
+        #print ['(%d, %d)  ' % (v, k ) for v, k in sorted_discovered]
+        return discovered
+
+    # exercise_12 : compute the 
+    #@run_time
+    def compute_size(self):
+        discovered = [None] * len(self.graph.nodes_dict.keys()) 
+        for x,_ in enumerate(discovered):
+            if discovered[x] is None:
+                if not self.graph.nodes_dict[x]:
+                    discovered[x] = 'connectless'
+                else:
+                    level = [x]
+                    while len(level) > 0:
+                        next_level = []
+                        for u1 in level:
+                            for u2 in self.graph.nodes_dict[u1]:
+                                if discovered[u2] is None:
+                                    discovered[u2] = x
+                                    next_level.append(u2)
+                        level = next_level
+        component = {}
+        for k, g in itertools.groupby(sorted(discovered)):
+            if k != 'connectless':
+                size = len(list(g))
+                component[k] = size
+                print 'component: %s, size: %s' % (k, size)
+        sorted_componet = sorted(component.items(), key = operator.itemgetter(0))
+        d = {}
+        for size in sorted(component.values()):
+            if size in d:
+                d[size] += 1
             else:
-                level = [x]
-                while len(level) > 0:
-                    next_level = []
-                    for u1 in level:
-                        for u2 in graph.nodes_dict[u1]:
-                            if discovered[u2] is None:
-                                discovered[u2] = x
-                                next_level.append(u2)
-                    level = next_level
-    component = {}
-    for k, g in itertools.groupby(sorted(discovered)):
-        if k != 'connectless':
-            size = len(list(g))
-            component[k] = size
-            print 'component: %s, size: %s' % (k, size)
-    sorted_componet = sorted(component.items(), key = operator.itemgetter(0))
-    d = {}
-    for size in sorted(component.values()):
-        if size in d:
-            d[size] += 1
-        else:
-            d[size] = 1
-    print d
-    #plt.scatter(d.values(), d.keys())
-    #plt.axis([1, 100, 1, 100])
-    #plt.xscale('log')
-    #plt.yscale('log')
-    #plt.show()
+                d[size] = 1
+        print d
+        #plt.scatter(d.values(), d.keys())
+        #plt.axis([1, 100, 1, 100])
+        #plt.xscale('log')
+        #plt.yscale('log')
+        #plt.show()
 
-    # exercies_13 : isloate the biggest componet
-    root = sorted_componet[0][0]
-    size = sorted_componet[0][1]
-    print 'biggest component: %d, size: %d' % (root, size)
-    biggest_component = []
-    for x,_ in enumerate(discovered):
-        if discovered[x] == root:
-            biggest_component.append(x)
-    print biggest_component
-
-# exercise 14
-
-def set_of_shortest_paths(graph):
-    discovered = {x:[] for x in graph.nodes_dict.keys()}
-    stage_table = [0] * (graph.node_number + 1)
-    print graph.nodes_dict
-    print graph.nodes_dict[4]
-    for x,_ in enumerate(discovered):
-        if not discovered[x]:
-            if not graph.nodes_dict[x]:
-                discovered[x] = 'disconnected'
-                stage_table[x] = 'disconnected'
-            else:
-                level = [x]
-                discovered[x].append(-1)
-                while len(level) > 0:
-                    next_level = []
-                    for u1 in level:
-                        for u2 in graph.nodes_dict[u1]:
-                            if len(discovered[u2]) == 0:
-                                stage_table[u2] = stage_table[u1] + 1
-                                discovered[u2].append(u1)
-                                next_level.append(u2)
-                            elif len(discovered[u2]) > 0:
-                                if stage_table[u2] == stage_table[u1] + 1:
-                                    if u1 not in discovered[u2]:
-                                        discovered[u2].append(u1)
-                    level = next_level
-    print discovered
-    print stage_table
-    return [discovered, stage_table]
-
-# exercise 15
-
-
-
-if __name__  == "__main__":
+        # exercies_13 : isloate the biggest componet
+        root = sorted_componet[0][0]
+        size = sorted_componet[0][1]
+        print 'biggest component: %d, size: %d' % (root, size)
+        biggest_component = []
+        for x,_ in enumerate(discovered):
+            if discovered[x] == root:
+                biggest_component.append(x)
+        self.biggest_component = biggest_component
+        return self.biggest_component
     
-    g = Graph('dataset.txt')
-    g.compute_all()
-    compute_density(g)
-    bfs(g, 0)
-    compute_size(g)
-    set_of_shortest_paths(g)
+    # exercise 14
+    #@run_time
+    def set_of_shortest_paths(self, s):
+        parent = {} 
+        stage_table = [0] * (self.graph.node_number + 1)
+        level = [s]
+        parent[s] = [-1]
+        while len(level) > 0:
+            next_level = []
+            for u1 in level:
+                for u2 in self.graph.nodes_dict[u1]:
+                    if u2 not in parent:
+                        stage_table[u2] = stage_table[u1] + 1
+                        parent[u2] = []
+                        parent[u2].append(u1)
+                        next_level.append(u2)
+                    if stage_table[u2] == stage_table[u1] + 1:
+                        if u1 not in parent[u2]:
+                            parent[u2].append(u1)              
+            level = next_level
+        return parent
 
 
+    # exercise 15
+    #@run_time
+    def number_of_shortest_paths(self, v):
+        for s in self.graph.nodes_dict:
+            parent = {}
+            flow = dict.fromkeys(self.graph.nodes_dict, 0.0)
+            flow[s] = 1.0
+            stage_table = [0] * (self.graph.node_number + 1)
+            stage_table[s] = 0
+            parent[s] = [-1]
+            level = [s]
+            while len(level) > 0:
+                next_level = []
+                for u1 in level:
+                    flowu = flow[u1]
+                    for u2 in self.graph.nodes_dict[u1]:
+                        if u2 not in parent:
+                            stage_table[u2] = stage_table[u1] + 1
+                            parent[u2] = []
+                            parent[u2].append(u1)
+                            next_level.append(u2)
+                        if stage_table[u2] == stage_table[u1] + 1:
+                            flow[u2] += flowu #count the flow
+                            if u1 not in parent[u2]:
+                                parent[u2].append(u1)
+                level = next_level
+            print sum(flow.values()), parent
+
+    def betweenness_centrality(self, v):
+        '''
+        for s in self.biggest_component:
+            level = []
+            P = [] * self.biggest_component
+        '''
+
+def accumulate_basic(betweenness, S, P, sigma, s):
+        delta = dict.fromkeys(S, 0)
+        while S:
+            w = S.pop()
+            coeff = (1.0 + delta[w]) / sigma[w]
+            for v in P[w]:
+                delta[v] += sigma[v] * coeff
+            if w != s:
+                betweenness[w] += delta[w]
+        return betweenness
+
+
+if __name__  == "__main__":                  
+    #g = Graph('dataset.txt')
+    gs = Graph('drosophila_PPI.txt')
+    #gi = Graph('inet.txt')
+    #g.compute_all()
+    gs.compute_all()
+    #gi.compute_all()
+    #gs.make_plot()
+    #gi.make_plot()
+    compute_triangle_values(gs)
+
+    #b = Bfs(g)
+    #b.bfs(0)
+    #b.compute_size()
+    #b.set_of_shortest_paths(0)
+    #f = lambda v, s: b.number_of_shortest_paths(v, s)
+    #b.number_of_shortest_paths(0)
+    '''
+    for x in b.biggest_component:
+        if x != 0:
+            print b.number_of_shortest_paths(0, x)
+    #b.betweenness_centrality(0, )
+    '''
 
