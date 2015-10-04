@@ -357,7 +357,7 @@ class Bfs(object):
         return dag
 
 
-    # exercise_15 : old way to do it(only can compute small datasets)
+    # exercise_15 : shortest path from seed s through v
     #@run_time
     def number_of_shortest_paths(self, s, v):
         dag = {s: []}
@@ -390,7 +390,7 @@ class Bfs(object):
             child_level = next_level
         print child_path * flow[v] #dn * up
 
-    # exercise_16 : brandes algorithm to compute
+    # exercise_16 : old way to do it(only can compute small datasets)
     @run_time
     def betweenness_centrality(self):
         bc = {x: 0.0 for x in dict.fromkeys(self.graph.nodes_dict, 0.0)}
@@ -433,6 +433,7 @@ class Bfs(object):
                 f.write('%s %s\n' % (k, v))
         print bc
 
+    # exercise_16 : brandes algorithm to compute
     @run_time
     def new_betweenness_centrality(self):
         bc = dict.fromkeys(self.graph.nodes_dict, 0.0)
