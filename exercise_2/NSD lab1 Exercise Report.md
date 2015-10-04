@@ -213,4 +213,34 @@ b.number_of_shortest_paths(s, v)
 ```
 
 #### Exercise 16 — Betweenness centrality
-If using the previous exercises before, the compltexity of betweenness centrality would be $O(n^3)$
+If using the previous exercises before, the compltexity of betweenness centrality would be $O(n^3)$. 
+
+```python
+b.betweenness_centrality() 
+```
+And I also tried [*BRANDES*][9] Algorithm, whose complexity is only $O(m+n)$.
+
+```python
+b.new_betweenness_centrality() 
+```
+> For the big networks like sophia and inet, it will inefficiently use the simple bfs way to compute, and the faster algorithm proposed by Brandes is more qualified  to do this computation.
+ 
+ **Filename:** [`drosophila_PPI_bc.dn`][7]
+
+**Filename:** [`inet_bc.dn`][8]
+
+[7]: datasets/drosophila_PPI_bc.dn
+[8]: datasets/inet_graphe_nc.dn
+ 
+ 
+ 
+Betweenness centrality Distribution and Cumulative Betweenness centrality Distribution of graph for **sophia network** are as follows after I apply the new algorithm:
+
+![sophia_network](figures/sophia_bc.png)
+
+Betweenness centrality Distribution and Cumulative Betweenness centrality Distribution of graph for **inet network** are as follows after I apply the new algorithm:
+
+![inet_network](figures/inet_bc.png)
+
+
+[9]: http://algo.uni-konstanz.de/publications/b-fabc-01.pdf

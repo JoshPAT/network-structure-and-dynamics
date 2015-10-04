@@ -232,11 +232,11 @@ def distribution(li):
                 distribution[key] = 1
     return distribution
 
-def make_plot_cc(density_distribution_1, density_distribution_2):
-    plot1, plot2 = density_distribution_1, density_distribution_2
+def make_two_plot(dict1, dict2):
+    plot1, plot2 = dict1, dict2
     f, (ax1, ax2) = plt.subplots(1, 2, sharex=True, sharey = True, figsize=(14, 6))
     ax1.scatter(plot1.values(), plot1.keys())
-    ax1.axis([0, 50, 0, 1])
+    #ax1.axis([0, 50, 0, 1])
     ax1.set_xlabel('Number of nodes', fontsize = 14)
     ax1.set_ylabel('Clustering coefficient', fontsize = 14)
     ax1.set_title('Sophia')
@@ -357,7 +357,7 @@ class Bfs(object):
         return dag
 
 
-    # exercise_15 : returns the number of shortest paths go through v from s
+    # exercise_15 : old way to do it(only can compute small datasets)
     #@run_time
     def number_of_shortest_paths(self, s, v):
         dag = {s: []}
@@ -390,10 +390,10 @@ class Bfs(object):
             child_level = next_level
         print child_path * flow[v] #dn * up
 
-    # exercise_16 : returns betweenness centrality of one node
-    #@run_time
+    # exercise_16 : brandes algorithm to compute
+    @run_time
     def betweenness_centrality(self):
-        bc = {x: [] for x in dict.fromkeys(self.graph.nodes_dict, 0.0)}
+        bc = {x: 0.0 for x in dict.fromkeys(self.graph.nodes_dict, 0.0)}
         for s in dict.fromkeys(self.graph.nodes_dict):
                 dag = {s: []}
                 flow = dict.fromkeys(self.graph.nodes_dict, 0.0)
@@ -415,7 +415,7 @@ class Bfs(object):
                                 if u2 not in dag[u1]:
                                     dag[u1].append(u2)
                     level = next_level
-                for v in dict.fromkeys(self.graph.nodes_dict):
+                for v in dict.fromkeys(dag):
                     if v != s:
                         child_level = dag[v]
                         sigma = {v: [] for v in dict.fromkeys(self.graph.nodes_dict)}
@@ -425,9 +425,13 @@ class Bfs(object):
                                 next_level += dag[child]
                                 sigma[v].append(flow[v] / flow[child])
                             child_level = next_level
-                        bc[v].append(sum(sigma[v]))
-                        print sum(sigma[v])
-                print bc[v] #s -> t and t -> s counted twice
+                        #bc[v].append(sum(sigma[v]))
+                        #print sum(sigma[v]), v
+                        bc[v] += sum(sigma[v]) / 2.0 #print bc[v] #s -> t and t -> s counted twice
+        with open(self.datasetpath + '_bc0.dn', 'w') as f:
+            for k,v in bc.iteritems():
+                f.write('%s %s\n' % (k, v))
+        print bc
 
     @run_time
     def new_betweenness_centrality(self):
@@ -461,37 +465,54 @@ class Bfs(object):
         with open(self.datasetpath + '_bc.dn', 'w') as f:
             for k,v in bc.iteritems():
                 f.write('%s %s\n' % (k, v))
-        return bc
+        print bc
+
+#used to plot bc distrubition
+def make_two_plot_bc(bc_data):
+    d = {}
+    with open(bc_data, 'r') as f:
+        for line in f.readlines():
+            i, j = [float(x) for x in line.strip().split(' ')]
+            d[i] = j
+    dn = distribution(d)
+    dcm = dn.copy()
+    n = 0
+    for element in reversed(sorted(dcm.keys())):
+        n = dcm[element] + n
+        dcm[element] = n
+    plot1, plot2 = dn , dcm
+    f, (ax1, ax2) = plt.subplots(1, 2, sharey = True ,figsize=(14, 6))
+    ax1.scatter(plot1.values(), plot1.keys())
+    ax1.set_xlabel('Number of nodes', fontsize = 14)
+    ax1.set_ylabel('Betweenness centrality', fontsize = 14)
+    ax1.set_title('Distribution')
+    ax2.scatter(plot2.values(), plot2.keys())
+    ax2.set_xlabel('Number of nodes', fontsize = 14)
+    ax2.set_ylabel('Betweenness centrality', fontsize = 14)
+    ax2.set_title('Cumulative Distribution')
+    plt.show()
 
 
 if __name__  == "__main__":
-    g= Graph('dataset.txt')
-    g.compute_all()
-    #gs = Graph('drosophila_PPI.txt')
-    #gs.compute_all()
-    #gs.make_plot()
-    #gs.compute_triangle_values()
-    #gi = Graph('inet.txt')
-    #gi.compute_all()
-    #gi.make_plot()
-    #gi.compute_triangle_values()
-    #c1, c2 = distribution_cc(gs.compute_triangle_values()), distribution_cc(gi.compute_triangle_values())
-    #make_plot_cc(c1, c2)
+    gs = Graph('drosophila_PPI.txt')
+    gs.compute_all()
+    gs.make_plot()
+    gs.compute_triangle_values()
 
-    b = Bfs(g)
-    #print b.bfs(3)
-    #print b.set_of_shortest_paths(3)
-    #b.number_of_shortest_paths(3, 1)
-    #b.betweenness_centrality(0)
-    b.betweenness_centrality()
-    cb = b.new_betweenness_centrality()
-    d = distribution(cb)
-    print d
-    plt.scatter(d.values(), d.keys())
-    #plt.axis([1, 100, 1, 1000])
-    #plt.xscale('log')
-    plt.ylabel('betweenness centrality')
-    #plt.yscale('log')
-    plt.xlabel('Number of the nodes')
-    #plt.title('Distribution of the Component Size')
-    plt.show()
+    '''
+    gi = Graph('inet.txt')
+    gi.compute_all()
+    gi.make_plot()
+    gi.compute_triangle_values()
+    #c1, c2 = distribution(gs.compute_triangle_values()), distribution(gi.compute_triangle_values())
+    #make_two_plot(c1, c2)
+    '''
+
+    b = Bfs(gs) # or gi
+    print b.bfs(3)
+    print b.set_of_shortest_paths(3)
+    b.number_of_shortest_paths(3, 1)
+    #b.betweenness_centrality()
+    #b.new_betweenness_centrality()
+    make_two_plot_bc('datasets/drosophila_PPI_bc.dn')
+    #make_two_plot_bc('datasets/inet_bc.dn')
