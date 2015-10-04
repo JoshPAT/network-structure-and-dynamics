@@ -1,10 +1,12 @@
 
 # M2 - NSD Lab1 Report
-------
+
 Name: Zhou Quan
 
 Date: 2015-10-02 
 
+--
+[*[Source Code]*][10]
 ## Basic operations and properties
 #### Exercise 2 — Size of a graph
 
@@ -19,8 +21,8 @@ g.compute_node_number()
 
 **Size for inet network:**`9757`   **Filename:** [`inet_graphe.n`][2]
 
-[1]: datasets/drosophila_PPI_graphe.n
-[2]: datasets/inet_graphe.n
+[1]: https://github.com/JoshPAT/network-structure-and-dynamics/blob/master/exercise_2/datasets/drosophila_PPI_graphe.n
+[2]: https://github.com/JoshPAT/network-structure-and-dynamics/blob/master/exercise_2/datasets/inet_graphe.n
 
 #### Exercise 3 — Node degree
 The program computes and stores it in file `(*)_graphe.deg`. *And (\*) is the name of the file.*
@@ -30,11 +32,10 @@ g.compute_node_degree()
 ```
 
 **Filename:** [`drosophila_PPI_graphe.deg`][3]
-
 **Filename:** [`inet_graphe.deg`][4]
 
-[3]: datasets/drosophila_PPI_graphe.deg
-[4]: datasets/inet_graphe.deg
+[3]: https://github.com/JoshPAT/network-structure-and-dynamics/blob/master/exercise_2/datasets/drosophila_PPI_graphe.deg
+[4]: https://github.com/JoshPAT/network-structure-and-dynamics/blob/master/exercise_2/datasets/inet_graphe.deg
 
 #### Exercise 4 — Loading a graph in memory
 The program returns a list which stores the graph in memory way.
@@ -95,8 +96,8 @@ g.compute_degree_distribution()
 
 **Filename:** [`inet_graphe.dn`][6]
 
-[5]: datasets/drosophila_PPI_graphe.dn
-[6]: datasets/inet_graphe.dn
+[5]: https://github.com/JoshPAT/network-structure-and-dynamics/blob/master/exercise_2/datasets/drosophila_PPI_graphe.dn
+[6]: https://github.com/JoshPAT/network-structure-and-dynamics/blob/master/exercise_2/datasets/inet_graphe.dn
 
 
 #### Exercise 7 — Delete loops
@@ -229,8 +230,8 @@ b.new_betweenness_centrality()
 
 **Filename:** [`inet_bc.dn`][8]
 
-[7]: datasets/drosophila_PPI_bc.dn
-[8]: datasets/inet_graphe_nc.dn
+[7]: https://github.com/JoshPAT/network-structure-and-dynamics/blob/master/exercise_2/datasets/drosophila_PPI_bc.dn
+[8]: https://github.com/JoshPAT/network-structure-and-dynamics/blob/master/exercise_2/datasets/inet_graphe_nc.dn
  
  
  
@@ -242,5 +243,6 @@ Betweenness centrality Distribution and Cumulative Betweenness centrality Distri
 
 ![inet_network](figures/inet_bc.png)
 
-
+-
 [9]: http://algo.uni-konstanz.de/publications/b-fabc-01.pdf
+[10]: https://github.com/JoshPAT/network-structure-and-dynamics/blob/master/exercise_2/nsd_homework_1.py
