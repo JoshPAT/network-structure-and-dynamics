@@ -231,7 +231,7 @@ b.new_betweenness_centrality()
 **Filename:** [`inet_bc.dn`][8]
 
 [7]: https://github.com/JoshPAT/network-structure-and-dynamics/blob/master/exercise_2/datasets/drosophila_PPI_bc.dn
-[8]: https://github.com/JoshPAT/network-structure-and-dynamics/blob/master/exercise_2/datasets/inet_graphe_nc.dn
+[8]: https://github.com/JoshPAT/network-structure-and-dynamics/blob/master/exercise_2/datasets/inet_bc.dn
  
  
  

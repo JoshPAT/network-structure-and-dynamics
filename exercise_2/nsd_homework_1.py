@@ -3,8 +3,6 @@
 
 __author__ = 'Josh zhou'
 
-#!/usr/bin/env python 2.7.8
-# -*- coding: utf-8 -*-
 
 '''
 This program is about Part 2 'Basic operations and properties'.
@@ -170,13 +168,13 @@ class Graph(object):
         ax1.scatter(plot1.keys(), plot1.values())
         ax1.axis([1, 1000, 1, 10000])
         ax1.set_xscale('log')
-        ax1.set_xlabel('Number of nodes', fontsize = 14)
+        ax1.set_xlabel('Degree', fontsize = 14)
         ax1.set_yscale('log')
-        ax1.set_ylabel('Degree', fontsize = 14)
+        ax1.set_ylabel('Number of nodes', fontsize = 14)
         ax1.set_title('Degree Distribution')
         ax2.scatter(plot2.keys(), plot2.values())
-        ax2.set_xlabel('Number of nodes', fontsize = 14)
-        ax2.set_ylabel('Degree', fontsize = 14)
+        ax2.set_xlabel('Degree', fontsize = 14)
+        ax2.set_ylabel('Number of nodes', fontsize = 14)
         ax2.set_xscale('log')
         ax2.set_yscale('log')
         ax2.set_title('Cumulative Degree Distribution')
@@ -482,7 +480,7 @@ def make_two_plot_bc(bc_data):
         n = dcm[element] + n
         dcm[element] = n
     plot1, plot2 = dn , dcm
-    f, (ax1, ax2) = plt.subplots(1, 2, sharey = True ,figsize=(14, 6))
+    f, (ax1, ax2) = plt.subplots(1, 2,figsize=(14, 6))
     ax1.scatter(plot1.values(), plot1.keys())
     ax1.set_xlabel('Number of nodes', fontsize = 14)
     ax1.set_ylabel('Betweenness centrality', fontsize = 14)
@@ -493,22 +491,20 @@ def make_two_plot_bc(bc_data):
     ax2.set_title('Cumulative Distribution')
     plt.show()
 
+def process_graph(datafile):
+    g = Graph(datafile)
+    g.compute_all()
+    g.make_plot()
+    g.compute_triangle_values()
 
 if __name__  == "__main__":
-    gs = Graph('drosophila_PPI.txt')
-    gs.compute_all()
-    gs.make_plot()
-    gs.compute_triangle_values()
+    process_graph('inet.txt')
+    process_graph('drosophila_PPI.txt')
 
-    '''
-    gi = Graph('inet.txt')
-    gi.compute_all()
-    gi.make_plot()
-    gi.compute_triangle_values()
+    
     #c1, c2 = distribution(gs.compute_triangle_values()), distribution(gi.compute_triangle_values())
     #make_two_plot(c1, c2)
     '''
-
     b = Bfs(gs) # or gi
     print b.bfs(3)
     print b.set_of_shortest_paths(3)
@@ -517,3 +513,4 @@ if __name__  == "__main__":
     #b.new_betweenness_centrality()
     make_two_plot_bc('datasets/drosophila_PPI_bc.dn')
     #make_two_plot_bc('datasets/inet_bc.dn')
+    '''
