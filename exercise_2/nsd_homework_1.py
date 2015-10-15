@@ -113,6 +113,7 @@ class Graph(object):
         print 'Min Degree: %s' % min(self.degree_table)
         print 'Average Degree: %s' % (sum(self.degree_table) * 1.0 / len(self.degree_table))
         print 'Density of graph: %s' % (1.0 * sum(self.degree_table) / (len(self.degree_table) * (len(self.degree_table) - 1)))
+        print 'Sum of Degree %s' % sum(self.degree_table)
 
     # exercise_6 : compute the degree distrubition
     #@run_time
@@ -194,6 +195,7 @@ class Graph(object):
         print self.cum_degree_distribution
         self.compute_nodes_dict()
         print self.nodes_dict
+        self.graph_infos()
 
     # exercise_10 : compute cluster coefficient and transitive ratio for each node
     @run_time
@@ -476,6 +478,7 @@ def make_two_plot_bc(bc_data):
     dn = distribution(d)
     dcm = dn.copy()
     n = 0
+    # element is centrality
     for element in reversed(sorted(dcm.keys())):
         n = dcm[element] + n
         dcm[element] = n
@@ -494,11 +497,11 @@ def make_two_plot_bc(bc_data):
 def process_graph(datafile):
     g = Graph(datafile)
     g.compute_all()
-    g.make_plot()
-    g.compute_triangle_values()
+    #g.make_plot()
+    #g.compute_triangle_values()
 
 if __name__  == "__main__":
-    process_graph('inet.txt')
+    #process_graph('inet.txt')
     process_graph('drosophila_PPI.txt')
 
     

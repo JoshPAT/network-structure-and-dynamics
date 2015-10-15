@@ -99,7 +99,6 @@ class Graph(object):
             index_table[i] += 1
             self.graph_in_memory[index_j] = i
             index_table[j] += 1
-        print self.graph_in_memory
         return self.graph_in_memory
 
     # exercise_5 : compute some infos about graph
@@ -109,7 +108,6 @@ class Graph(object):
         print 'Max Degree: %s' % max(self.degree_table)
         print 'Min Degree: %s' % min(self.degree_table)
         print 'Average Degree: %s' % (sum(self.degree_table) * 1.0 / len(self.degree_table))
-        print 'Density of graph: %s' % (1.0 * sum(self.degree_table) / (len(self.degree_table) * (len(self.degree_table) - 1)))
 
     # exercise_6 : compute the degree distrubition
     #@run_time
@@ -161,7 +159,7 @@ class Graph(object):
     #@run_time
     def make_plot(self):
         plot1, plot2 = self.degree_distribution, self.cum_degree_distribution
-        f, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+        f, (ax1, ax2) = plt.subplots(1, 2, sharex=True, sharey = True,figsize=(14, 6))
         ax1.scatter(plot1.keys(), plot1.values())
         ax1.axis([1, 1000, 1, 10000])
         ax1.set_xscale('log')
@@ -179,16 +177,11 @@ class Graph(object):
 
     #@run_time
     def compute_all(self):
-        print self.node_number
-        print self.degree_table
         self.store_in_memory()
         self.graph_infos()
         self.compute_degree_distribution()
-        print self.degree_distribution
         self.cumlative_degree_distribution()
-        print self.cum_degree_distribution
         self.compute_nodes_dict()
-        print self.nodes_dict
 
     # exercise_10 : compute cluster coefficient and transitive ratio for each node
     @run_time
@@ -212,9 +205,11 @@ class Graph(object):
                 cc.append((2 * num_tri)/ (len(v) * (len(v) - 1) ))
                 num_tri = 0
         tr = sum_tri / num_v
-        print 'clustering coefficient:', cc
+        #print 'clustering coefficient:', cc
         print 'transitive ratio: %0.11f' % tr
-        return cc
+        print 'average clustering coefficient: %0.11f' % (sum(cc) / num_v)
+        average_cc = (sum(cc) / num_v)
+        return cc, average_cc
 
 def distribution(li):
     distribution = {}
@@ -263,18 +258,24 @@ def make_two_plot_bc(bc_data):
     ax2.set_title('Cumulative Distribution')
     plt.show()
 
+def measure_graph(m):
+    graph = Graph(m.file)
+    graph.compute_all()
+    graph.plotly_plot()
+    return graph.compute_triangle_values()[1]
 
 if __name__  == "__main__":
     import graphmodels, datasets
-    #m = graphmodels.ErdosRenyiModels()
-    #m.generation(7236, 22270)
-    m = graphmodels.RandomFixedDegreeModels()
-    m.switch_generation('inet.txt')
-    graph_random = Graph(m.file)
-    graph = Graph('inet.txt')
-    graph.compute_all()
-    graph.make_plot()
-    graph.compute_triangle_values()
-    #graph_random.compute_all()
-    #graph_random.make_plot()
-    #graph_random.compute_triangle_values()
+    measure_graph(graphmodels.model_ER())
+    #measure_graph(graphmodels.model_WS(7236, 6, 0.9))
+    '''
+    s =[]
+    for i in np.arange(0, 0.1, 0.01):
+        s.append(measure_graph(graphmodels.model_WS(7236, 6, i)))
+    print s
+    '''
+    #graph = Graph('barabasi_alert.txt')
+    #graph.compute_all()
+    #graph.make_plot()
+    
+    
