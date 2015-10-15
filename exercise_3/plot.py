@@ -1,8 +1,11 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+__author__ = 'Quan zhou'
 
 import plotly.plotly as py
 import plotly.graph_objs as go
-from plotly import tools
-from nsd_homework_2 import Graph
+from graph import Graph
 
 class Plot(Graph):
     '''
@@ -109,7 +112,7 @@ def measure_graph(m):
     return graph.compute_triangle_values()[1]
 
 if __name__ == '__main__':
-    import graphmodels, datasets
+    import models, datasets
     #measure_graph(graphmodels.model_ER())
-    measure_graph(graphmodels.model_FD())
+    measure_graph(models.model_FD())
     

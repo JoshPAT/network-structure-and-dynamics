@@ -1,7 +1,7 @@
- #!/usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-__author__ = 'Josh zhou'
+__author__ = 'Quan zhou'
 
 import random, numpy as np, functools, time
 from collections import defaultdict
@@ -189,7 +189,7 @@ class WattStrogatzModels(object):
 						vector.append((i, i+ x ))
 				i += 1
 		vector = np.array(vector)
-		edges = {k:[] for k in xrange(n)}
+		edges = defaultdict(list)
 		for i, j in vector:
 			edges[i].append(j)
 			edges[j].append(i)
