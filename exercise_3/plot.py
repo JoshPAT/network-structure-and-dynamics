@@ -7,6 +7,7 @@ import plotly.plotly as py
 import plotly.graph_objs as go
 from feature import Feature
 from models import RandomFixedDegreeModels
+import collections
 
 class Plot(Feature):
     '''
@@ -114,16 +115,17 @@ class Plot_cc(RandomFixedDegreeModels):
         with open('datasets/' + self.cluster_file, 'r') as f:
             for line in f.readlines():
                 n, c = line.strip().split(' ')
-                plotcc[n] = c
+                plotcc[int(n)] = float(c)
+        plotcc = collections.OrderedDict(sorted(plotcc.items()))
         trace1 = go.Scatter(
             x = plotcc.keys(),
             y = plotcc.values(),
             showlegend = False,
-            mode = 'markers'
+            mode = 'lines+markers',
         )
         data = [trace1]
         layout = go.Layout(
-            title = self.cluster_file.split('.')[0].capitalize(),
+            title = 'clustering coefficient Trends',
             autosize = True,
             
             xaxis = dict(
@@ -144,6 +146,45 @@ class Plot_cc(RandomFixedDegreeModels):
         fig = go.Figure(data = data, layout =layout)
         plot_url = py.plot(fig, filename= self.cluster_file.split('.')[0].capitalize())
 
+def watts_strogaz():
+    p1 = [x * 0.1 for x in xrange(10)]
+    p2 = [x * 0.01 for x in xrange(10)]
+    pc = p1 + p2 #combined probility
+    pc = sorted(pc)
+    ratio = {}
+    c0 = measure_graph(models.model_WS(7235, 6, 0))
+    for p in pc:
+        ratio[p] = measure_graph(models.model_WS(7235, 6, p)) / c0
+    ratio = collections.OrderedDict(sorted(ratio.items()))
+    trace1 = go.Scatter(
+            x = ratio.keys(),
+            y = ratio.values(),
+            name = 'C(p)/C(0)',
+            showlegend = True,
+            mode = 'lines+markers',
+        )
+    data = [trace1]
+    layout = go.Layout(
+        title = 'clustering coefficient Trends',
+        autosize = True,
+        xaxis = dict(
+            type = 'log',
+            autorange = True,
+            title = 'Probability',
+            exponentformat='none',
+            tickangle = 10
+        ),
+        yaxis = dict(
+            type = 'log',
+            autorange = True,
+            title = 'clustering coefficient Ratio',
+            exponentformat ='none',
+            tickangle = 10
+        ),
+        plot_bgcolor='rgb(238, 238, 238)',
+    )
+    fig = go.Figure(data = data, layout =layout)
+    plot_url = py.plot(fig, filename= 'watts Strogaz Randomization Trends')
 
 
 def measure_graph(m):
@@ -152,12 +193,14 @@ def measure_graph(m):
     else:
         p = Plot(m.file)
     p.compute_size()
-    p.plot_degree()
-
+    #p.plot_degree()
+    return p.compute_triangle_values()
 
 if __name__ == '__main__':
     import models, datasets
+    watts_strogaz()
     #measure_graph(models.model_ER())
     #measure_graph(models.model_FD('switch'))
     #measure_graph('drosophila_PPI.txt')
-    p = Plot_cc()
+    #measure_graph(models.model_BA())
+    #measure_graph(models.model_WS(7235, 6, 0.1))

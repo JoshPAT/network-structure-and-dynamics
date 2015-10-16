@@ -86,6 +86,6 @@ if __name__ == '__main__':
     m = models.model_ER()
     f = Feature(m.file)
     f.compute_triangle_values()
-    #f.compute_size()
-    #f.average_distance()
+    f.compute_size()
+    f.average_distance()
 

@@ -43,7 +43,7 @@ class RandomFixedDegreeModels(object):
 			self.file = 'switch_fixed_table.txt'
 			self.permutation_file = 'permutation_file.txt'
 			self.cluster_file = 'cluster_file.txt'
-	
+
 	def direct_generate(self, degree_table = None):
 		n , fixed_table = 0, []
 		with open('datasets/' + degree_table, 'r') as f:
@@ -87,8 +87,16 @@ class RandomFixedDegreeModels(object):
 		for _ in xrange(t):
 			# compute the cc every 10^4 times, and write it into the file 
 			if recompute:
-				if _ < 10 **4:
+				if _ < 10 **3:
 					if _ % (10 ** 2) == 0:
+						with open('datasets/' + self.permutation_file, 'w') as f:
+							for u, v in vector:
+								f.write('%d %d\n' % (u, v))
+						g = Graph(self.permutation_file)
+						with open('datasets/' + self.cluster_file, 'a') as f:
+							f.write('%d %0.11f\n' % (_, g.compute_triangle_values()))
+				if _ < 10 **4:
+					if _ % (10 ** 3) == 0:
 						with open('datasets/' + self.permutation_file, 'w') as f:
 							for u, v in vector:
 								f.write('%d %d\n' % (u, v))
@@ -258,10 +266,10 @@ def model_ER():
 	m.generate(7236, 22270)
 	return m
 
-def model_FD(option = 'direct'):
+def model_FD(option = 'direct', r = False):
 	m = RandomFixedDegreeModels(option)
 	if option == 'switch':
-		m.switch_generate('drosophila_PPI.txt', recompute = True)
+		m.switch_generate('drosophila_PPI.txt', recompute = r)
 	elif option == 'direct':
 		m.direct_generate('drosophila_PPI_graphe.deg')
 	return m
