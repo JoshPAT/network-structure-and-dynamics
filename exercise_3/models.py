@@ -5,7 +5,7 @@ __author__ = 'Quan zhou'
 
 import random, numpy as np, functools, time
 from collections import defaultdict
-
+from graph import Graph
 
 def run_time(func):
 	@functools.wraps(func)
@@ -36,34 +36,47 @@ class ErdosRenyiModels(object):
 		return graph
 
 class RandomFixedDegreeModels(object):
-	def __init__(self):
-		self.file = 'fixed_table.txt'
-
+	def __init__(self, option = 'direct'):
+		if option == 'direct':
+			self.file = 'direct_fixed_table.txt'
+		elif option == 'switch':
+			self.file = 'switch_fixed_table.txt'
+			self.permutation_file = 'permutation_file.txt'
+			self.cluster_file = 'cluster_file.txt'
+	
 	def direct_generate(self, degree_table = None):
-		i , fixed_table = 0, []
-		with open('datesets' + degree_table, 'r') as f:
+		n , fixed_table = 0, []
+		with open('datasets/' + degree_table, 'r') as f:
 			for line in f.readlines():
 				d = int(line.strip())
 				for _ in xrange(d):
-					fixed_table.append(i)
-				i += 1
+					fixed_table.append(n)
+				n += 1
 		with open('datasets/' + self.file, 'w') as f:
 			i = len(fixed_table)
 			while i > 0:
 				#random.seed()
-				u = random.randint(0, i - 1)
-				fixed_table[i-1], fixed_table[u] = fixed_table[u], fixed_table[i-1]
-				v = random.randint(0, i - 2)
+				while True:
+					u = random.randint(0, i - 1)
+					v = random.randint(0, i - 2)
+					if fixed_table[u] != fixed_table[v]:
+						break
 				fixed_table[i-2], fixed_table[v] = fixed_table[v], fixed_table[i-2]
+				fixed_table[i-1], fixed_table[u] = fixed_table[u], fixed_table[i-1]
+				f.write('%d %d\n' % (fixed_table[i-1], fixed_table[i-2]))
 				i = i - 2
-				f.write('%d %d\n' % (u, v))
 
 	@run_time
-	def switch_generate(self, dataset, p = 10 ** 6):		
+	def switch_generate(self, dataset, t = 10 ** 6, recompute = False):		
+		if recompute:
+			with open('datasets/' + self.cluster_file, 'w') as f:
+					pass # initalization
 		vector= []
 		with open('datasets/' + dataset, 'r') as f:
 			for line in f.readlines():
-				vector.append([int(e) for e in line.strip().split(' ')])
+				i, j = [int(e) for e in line.strip().split(' ')]
+				if i != j:
+					vector.append([i,j])
 		vector = np.array(vector)
 		edges = defaultdict(list)
 		
@@ -71,7 +84,25 @@ class RandomFixedDegreeModels(object):
 			edges[i].append(j)
 			edges[j].append(i)
 		
-		for _ in xrange(p):
+		for _ in xrange(t):
+			# compute the cc every 10^4 times, and write it into the file 
+			if recompute:
+				if _ < 10 **4:
+					if _ % (10 ** 2) == 0:
+						with open('datasets/' + self.permutation_file, 'w') as f:
+							for u, v in vector:
+								f.write('%d %d\n' % (u, v))
+						g = Graph(self.permutation_file)
+						with open('datasets/' + self.cluster_file, 'a') as f:
+							f.write('%d %0.11f\n' % (_, g.compute_triangle_values()))
+				else:
+					if _ % (10 ** 5) == 0:
+						with open('datasets/' + self.permutation_file, 'w') as f:
+							for u, v in vector:
+								f.write('%d %d\n' % (u, v))
+						g = Graph(self.permutation_file)
+						with open('datasets/' + self.cluster_file, 'a') as f:
+							f.write('%d %0.11f\n' % (_, g.compute_triangle_values()))
 			while True:
 				r1 = np.random.randint(0, len(vector) - 1) # row 1
 				i = vector[r1, 0]
@@ -84,7 +115,6 @@ class RandomFixedDegreeModels(object):
 						if vector[r1, 1] not in edges[j]:
 							if vector[r2, 1] not in edges[i]:
 								break
-			
 			# now do the switch end
 			a, b = vector[r1]
 			c, d = vector[r2]
@@ -228,11 +258,11 @@ def model_ER():
 	m.generate(7236, 22270)
 	return m
 
-def model_FD(option = False):
-	m = RandomFixedDegreeModels()
-	if option:
-		m.switch_generate('drosophila_PPI.txt')
-	else:
+def model_FD(option = 'direct'):
+	m = RandomFixedDegreeModels(option)
+	if option == 'switch':
+		m.switch_generate('drosophila_PPI.txt', recompute = True)
+	elif option == 'direct':
 		m.direct_generate('drosophila_PPI_graphe.deg')
 	return m
 

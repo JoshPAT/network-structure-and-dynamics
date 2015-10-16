@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-__author__ = 'Josh zhou'
+__author__ = 'Quan zhou'
 
 import functools ,time, itertools, operator, math, datasets
-import matplotlib.pyplot as plt
 
 # a dectorator used to compute run time in a fucntion
 def run_time(func):
@@ -53,6 +52,7 @@ class Graph(object):
         # initalization
         self.compute_node_number()
         self.compute_node_degree()
+        self.compute_nodes_dict()
 
     # exercise_2 : compute the number of nodes
     #@run_time
@@ -130,6 +130,8 @@ class Graph(object):
                 i, j = [int(x) for x in line.strip().split(' ')]
                 if i != j:
                     l.append([i, j] if i >j else [j, i])
+            
+            #filter multiple edges
             for k, g in itertools.groupby(sorted(l)):
                 self.dataset.append(k)
         return self.dataset
@@ -157,37 +159,18 @@ class Graph(object):
         return self.nodes_dict
 
     #@run_time
-    def make_plot(self):
-        plot1, plot2 = self.degree_distribution, self.cum_degree_distribution
-        f, (ax1, ax2) = plt.subplots(1, 2, sharex=True, sharey = True,figsize=(14, 6))
-        ax1.scatter(plot1.keys(), plot1.values())
-        ax1.axis([1, 1000, 1, 10000])
-        ax1.set_xscale('log')
-        ax1.set_ylabel('Number of nodes', fontsize = 14)
-        ax1.set_yscale('log')
-        ax1.set_xlabel('Degree', fontsize = 14)
-        ax1.set_title('Degree Distribution')
-        ax2.scatter(plot2.keys(), plot2.values())
-        ax2.set_ylabel('Number of nodes', fontsize = 14)
-        ax2.set_xlabel('Degree', fontsize = 14)
-        ax2.set_xscale('log')
-        ax2.set_yscale('log')
-        ax2.set_title('Cumulative Degree Distribution')
-        plt.show()
-
-    #@run_time
     def compute_all(self):
         self.store_in_memory()
         self.graph_infos()
         self.compute_degree_distribution()
         self.cumlative_degree_distribution()
-        self.compute_nodes_dict()
 
     # exercise_10 : compute cluster coefficient and transitive ratio for each node
-    @run_time
+    #@run_time
     def compute_triangle_values(self):
         cc, tr = [], 0
         num_v, num_tri, sum_tri = 0, 0, 0
+
         for n, v in self.nodes_dict.iteritems():
             if not v:
                 cc.append(0) # cc of node without connection should be undefined
@@ -207,75 +190,11 @@ class Graph(object):
         tr = sum_tri / num_v
         #print 'clustering coefficient:', cc
         print 'transitive ratio: %0.11f' % tr
-        print 'average clustering coefficient: %0.11f' % (sum(cc) / num_v)
-        average_cc = (sum(cc) / num_v)
-        return cc, average_cc
-
-def distribution(li):
-    distribution = {}
-    for key in li.values():
-            if key in distribution:
-                distribution[key] += 1
-            else:
-                distribution[key] = 1
-    return distribution
-
-def make_two_plot(dict1, dict2):
-    plot1, plot2 = dict1, dict2
-    f, (ax1, ax2) = plt.subplots(1, 2, sharex=True, sharey = True, figsize=(14, 6))
-    ax1.scatter(plot1.values(), plot1.keys())
-    #ax1.axis([0, 50, 0, 1])
-    ax1.set_xlabel('Number of nodes', fontsize = 14)
-    ax1.set_ylabel('Clustering coefficient', fontsize = 14)
-    ax1.set_title('Sophia')
-    ax2.scatter(plot2.values() , plot2.keys())
-    ax2.set_xlabel('Number of nodes', fontsize = 14)
-    ax2.set_ylabel('Clustering coefficient', fontsize = 14)
-    ax2.set_title('Inet')
-    plt.show()
-
-def make_two_plot_bc(bc_data):
-    d = {}
-    with open(bc_data, 'r') as f:
-        for line in f.readlines():
-            i, j = [float(x) for x in line.strip().split(' ')]
-            d[i] = j
-    dn = distribution(d)
-    dcm = dn.copy()
-    n = 0
-    for element in reversed(sorted(dcm.keys())):
-        n = dcm[element] + n
-        dcm[element] = n
-    plot1, plot2 = dn , dcm
-    f, (ax1, ax2) = plt.subplots(1, 2, sharey = True ,figsize=(14, 6))
-    ax1.scatter(plot1.values(), plot1.keys())
-    ax1.set_xlabel('Number of nodes', fontsize = 14)
-    ax1.set_ylabel('Betweenness centrality', fontsize = 14)
-    ax1.set_title('Distribution')
-    ax2.scatter(plot2.values(), plot2.keys())
-    ax2.set_xlabel('Number of nodes', fontsize = 14)
-    ax2.set_ylabel('Betweenness centrality', fontsize = 14)
-    ax2.set_title('Cumulative Distribution')
-    plt.show()
-
-def measure_graph(m):
-    graph = Graph(m.file)
-    graph.compute_all()
-    graph.plotly_plot()
-    return graph.compute_triangle_values()[1]
+        print 'average clustering coefficient: %0.11f' % (sum(cc) / self.node_number)
+        average_cc = (sum(cc) / self.node_number)
+        return average_cc
 
 if __name__  == "__main__":
-    import graphmodels, datasets
-    measure_graph(graphmodels.model_ER())
-    #measure_graph(graphmodels.model_WS(7236, 6, 0.9))
-    '''
-    s =[]
-    for i in np.arange(0, 0.1, 0.01):
-        s.append(measure_graph(graphmodels.model_WS(7236, 6, i)))
-    print s
-    '''
-    #graph = Graph('barabasi_alert.txt')
-    #graph.compute_all()
-    #graph.make_plot()
+    pass
     
     

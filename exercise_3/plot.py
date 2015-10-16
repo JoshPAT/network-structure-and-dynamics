@@ -5,9 +5,10 @@ __author__ = 'Quan zhou'
 
 import plotly.plotly as py
 import plotly.graph_objs as go
-from graph import Graph
+from feature import Feature
+from models import RandomFixedDegreeModels
 
-class Plot(Graph):
+class Plot(Feature):
     '''
     It is used to plot the properties of graph using plotly
     Some of codes here are not pythonic.
@@ -36,7 +37,7 @@ class Plot(Graph):
         layout = go.Layout(
             title = self.title.capitalize(),
             width = 1000,
-            height = 500,
+            height = 550,
             
             xaxis = dict(
                 type = 'log',
@@ -103,16 +104,60 @@ class Plot(Graph):
         fig = go.Figure(data=data, layout=layout)
         plot_url = py.plot(fig, filename= self.title.capitalize())
 
-    def 
+class Plot_cc(RandomFixedDegreeModels):
+    def __init__(self):
+        super(Plot_cc, self).__init__(option = 'switch')
+        self.plot_cc()
+
+    def plot_cc(self):
+        plotcc = {}
+        with open('datasets/' + self.cluster_file, 'r') as f:
+            for line in f.readlines():
+                n, c = line.strip().split(' ')
+                plotcc[n] = c
+        trace1 = go.Scatter(
+            x = plotcc.keys(),
+            y = plotcc.values(),
+            showlegend = False,
+            mode = 'markers'
+        )
+        data = [trace1]
+        layout = go.Layout(
+            title = self.cluster_file.split('.')[0].capitalize(),
+            autosize = True,
+            
+            xaxis = dict(
+                type = 'log',
+                autorange = True,
+                title = 'Switch Times',
+                exponentformat='power',
+                tickangle = 10
+            ),
+            yaxis = dict(
+                type = 'log',
+                autorange = True,
+                title = 'clustering coefficient',
+                exponentformat ='power',
+                tickangle = 10
+            ),
+        )
+        fig = go.Figure(data = data, layout =layout)
+        plot_url = py.plot(fig, filename= self.cluster_file.split('.')[0].capitalize())
+
+
 
 def measure_graph(m):
-    graph = Plot(m.file)
-    graph.compute_all()
-    graph.plot_degree()
-    return graph.compute_triangle_values()[1]
+    if isinstance(m, str):
+        p = Plot(m)
+    else:
+        p = Plot(m.file)
+    p.compute_size()
+    p.plot_degree()
+
 
 if __name__ == '__main__':
     import models, datasets
-    #measure_graph(graphmodels.model_ER())
-    measure_graph(models.model_FD())
-    
+    #measure_graph(models.model_ER())
+    #measure_graph(models.model_FD('switch'))
+    #measure_graph('drosophila_PPI.txt')
+    p = Plot_cc()
