@@ -182,13 +182,12 @@ class BarabasiAlertModels(object):
 			i = maxi + 1 # start from next node of the inital node numbers -> 
 			while i <= n:
 				new_nodes = np.empty([m], dtype = np.int16)
-				start_m = m
 				for x in xrange(m):
 					while 1:
 						e = np.random.choice(degree_table[:,0], p = 1.0 * degree_table[:,1] / np.sum(degree_table[:,1]))
-						#if e not in new_nodes:
-						new_nodes[x] = e
-						break
+						if e not in new_nodes:
+							new_nodes[x] = e
+							break
 				for e in new_nodes:
 					degree_table[e, 1] += 1
 					f.write('%d %d\n' % (i, e))
@@ -204,7 +203,7 @@ class WattStrogatzModels(object):
 		'''
 		n: number of nodes.
 		k: the mean degree of the graph.
-		b: the parameter to describe the level of randomness(the bigger parameter more random the graph)
+		p: the parameter to describe the level of randomness(the bigger parameter more random the graph)
 		'''
 		# creat a watts-strogatz graph (b = 0)
  		vector = [] # vector stores the graph in (i, j) way
@@ -276,7 +275,7 @@ def model_FD(option = 'direct', r = False):
 
 def model_BA():
 	m = BarabasiAlertModels()
-	m.generate(7235, 6)
+	m.generate(7235, 3)
 	return m
 
 def model_WS(n,k,p):

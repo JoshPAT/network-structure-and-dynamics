@@ -108,7 +108,7 @@ class Graph(object):
         print 'Max Degree: %s' % max(self.degree_table)
         print 'Min Degree: %s' % min(self.degree_table)
         print 'Average Degree: %s' % (sum(self.degree_table) * 1.0 / len(self.degree_table))
-
+        print 'Density: %0.11f' % (2.0 * sum(self.degree_table) / (self.node_number * (self.node_number - 1)))
     # exercise_6 : compute the degree distrubition
     #@run_time
     def compute_degree_distribution(self):

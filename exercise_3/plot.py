@@ -151,19 +151,29 @@ def watts_strogaz():
     p2 = [x * 0.01 for x in xrange(10)]
     pc = p1 + p2 #combined probility
     pc = sorted(pc)
-    ratio = {}
+    ratio1 = {}
+    ratio2 = {}
     c0 = measure_graph(models.model_WS(7235, 6, 0))
     for p in pc:
-        ratio[p] = measure_graph(models.model_WS(7235, 6, p)) / c0
-    ratio = collections.OrderedDict(sorted(ratio.items()))
+        ratio1[p] = measure_graph(models.model_WS(7235, 6, p)) / c0
+        ratio2[p] = ratio1[p] * c0 / 0.01105530603
+    ratio1 = collections.OrderedDict(sorted(ratio1.items()))
+    ratio2 = collections.OrderedDict(sorted(ratio2.items()))
     trace1 = go.Scatter(
-            x = ratio.keys(),
-            y = ratio.values(),
+            x = ratio1.keys(),
+            y = ratio1.values(),
             name = 'C(p)/C(0)',
             showlegend = True,
             mode = 'lines+markers',
         )
-    data = [trace1]
+    trace2 = go.Scatter(
+            x = ratio2.keys(),
+            y = ratio2.values(),
+            name = 'C(p)/C(ppi-droso)',
+            showlegend = True,
+            mode = 'lines+markers',
+        )
+    data = [trace1, trace2]
     layout = go.Layout(
         title = 'clustering coefficient Trends',
         autosize = True,
@@ -181,7 +191,7 @@ def watts_strogaz():
             exponentformat ='none',
             tickangle = 10
         ),
-        plot_bgcolor='rgb(238, 238, 238)',
+
     )
     fig = go.Figure(data = data, layout =layout)
     plot_url = py.plot(fig, filename= 'watts Strogaz Randomization Trends')
@@ -193,14 +203,15 @@ def measure_graph(m):
     else:
         p = Plot(m.file)
     p.compute_size()
-    #p.plot_degree()
+    p.plot_degree()
+    p.average_distance()
     return p.compute_triangle_values()
 
 if __name__ == '__main__':
     import models, datasets
-    watts_strogaz()
+    #watts_strogaz()
     #measure_graph(models.model_ER())
     #measure_graph(models.model_FD('switch'))
     #measure_graph('drosophila_PPI.txt')
     #measure_graph(models.model_BA())
-    #measure_graph(models.model_WS(7235, 6, 0.1))
+    measure_graph(models.model_WS(7235, 6, 0.73))
