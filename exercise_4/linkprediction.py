@@ -154,15 +154,15 @@ class Local_Scoring():
 
         In numpy, it enables to sort array by certain name:
         
-        j_links = np.array(
-                    j_links,  # have to be tuple-like array
+        pair_sets = np.array(
+                    pair_sets,  # have to be tuple-like array
                     dtype = [
                         ('i', 'i2'),
                         ('j', 'i2'),
                         ('s', 'f8')
                         ]
                     )
-        j_links = np.sort(j_links, order = 's')[:-num_missed_links]
+        pair_sets = np.sort(pair_sets, order = 's')[:-num_missed_links]
 
         However, pypy interper doesn't fully support this function.
 
@@ -174,26 +174,24 @@ class Local_Scoring():
         if not os.path.exists(result_file):
             logging.info('Start to Compute...')
             # Load the edges 
-            d = nodes_edges()
-            j_links = []
-            for i in xrange(nodes_number+1):
-                for j in xrange(i, nodes_number+1):
-                    if i != j and j not in d[i]:
+            d = nodes_edges()     
+
+            pair_sets = collections.defaultdict(float)
+            for i,j in itertools.combinations(dict.fromkeys(d), 2):
+                if d[j] and d[i]:
+                    if j not in d[i]:
                         # Union = d[i] | d[j]
                         intersection = d[i] & d[j]
-                        if intersection:
+                        if intersection:                                    
                             scores = len(intersection) * 1.0 / len(d[i] | d[j])
-                            j_links.append([i,j,scores])      
-            
-            # Get the links ranked nth
-            j_links = np.array(j_links)
-            ranks = np.argsort(j_links[:,2], kind = 'heapsort')
-            j_links = j_links[ranks][-num_missed_links:]
-            logging.info('Finished.') 
+                            pair_sets[tuple([i,j])] = scores
+
+            pair_sets = sorted(pair_sets.items(), key=operator.itemgetter(1), reverse = True)
 
             with open(result_file, 'w') as f:
-                for i, j, s in j_links:
-                    f.write('%d %d %f\n' % (i, j, s))
+                for links, scores in pair_sets:
+                    f.write("%d %d " % links + "%f\n" % scores)
+            logging.info('Finished.')
 
     @staticmethod
     @mkdir
@@ -205,32 +203,29 @@ class Local_Scoring():
         '''
         
         result_file = os.path.join(dirpath, 'results.txt')
-
+        
         if not os.path.exists(result_file):
             logging.info('Start to Compute...')
             # Load the edges 
             d = nodes_edges()
-            j_links = []
-            for i in xrange(nodes_number+1):
-                for j in xrange(i, nodes_number+1):
-                    if i != j and j not in d[i]:
+            pair_sets = collections.defaultdict(float)
+            for i,j in itertools.combinations(dict.fromkeys(d), 2):
+                if d[j] and d[i]:
+                    if j not in d[i]:
                         # Union = d[i] | d[j]
                         intersection = d[i] & d[j]
-                        if intersection:
-                            scores = 0
-                            for internode in intersection:
-                                scores += 1.0 / math.log(len(d[internode]))
-                            j_links.append([i,j,scores]) 
+                        if intersection:                                    
+                            scores = \
+                                sum(1.0 / math.log(len(d[internode]))
+                                for internode in intersection)
+                            pair_sets[tuple([i,j])] = scores
 
-            # Get the links ranked nth
-            j_links = np.array(j_links)
-            ranks = np.argsort(j_links[:,2], kind = 'heapsort')[::-1]
-            j_links = j_links[ranks]
-            logging.info('Finished.') 
+            pair_sets = sorted(pair_sets.items(), key=operator.itemgetter(1), reverse = True)
 
             with open(result_file, 'w') as f:
-                for i, j, s in j_links:
-                    f.write('%d %d %f\n' % (i, j, s))
+                for links, scores in pair_sets:
+                    f.write("%d %d " % links + "%f\n" % scores)
+            logging.info('Finished.')
 
     @staticmethod
     @mkdir
@@ -246,27 +241,24 @@ class Local_Scoring():
             logging.info('Start to Compute...')
             # Load the edges 
             d = nodes_edges()
-            j_links = []
-            for i in xrange(nodes_number+1):
-                for j in xrange(i, nodes_number+1):
-                    if i != j and j not in d[i]:
+            pair_sets = collections.defaultdict(float)
+            for i,j in itertools.combinations(dict.fromkeys(d), 2):
+                if d[j] and d[i]:
+                    if j not in d[i]:
                         # Union = d[i] | d[j]
                         intersection = d[i] & d[j]
-                        if intersection:
-                            scores = 0
-                            for internode in intersection:
-                                scores += 1.0 / len(d[internode])
-                            j_links.append([i,j,scores]) 
+                        if intersection:                                    
+                            scores = \
+                                sum(1.0 / len(d[internode]) \
+                                for internode in intersection)
+                            pair_sets[tuple([i,j])] = scores
 
-            # Get the links ranked nth
-            j_links = np.array(j_links)
-            ranks = np.argsort(j_links[:,2], kind = 'heapsort')
-            j_links = j_links[ranks][-num_missed_links:]
-            logging.info('Finished.') 
+            pair_sets = sorted(pair_sets.items(), key=operator.itemgetter(1), reverse = True)
 
             with open(result_file, 'w') as f:
-                for i, j, s in j_links:
-                    f.write('%d %d %f\n' % (i, j, s))        
+                for links, scores in pair_sets:
+                    f.write("%d %d " % links + "%f\n" % scores)
+            logging.info('Finished.')        
 
 class Global_Scoring():
     @staticmethod
@@ -274,7 +266,7 @@ class Global_Scoring():
     @run_time
     def random_paths_scoring():
         '''
-        In order to generate 
+        This method is used to generate the random path size 4.
         '''
         
         result_file = os.path.join(dirpath, 'results.txt')
@@ -301,12 +293,10 @@ class Global_Scoring():
                     if len(random_path) > 3:
                         break
                 # Filter the existing link in the path
-                if random_path[0] not in d[random_path[2]]:
-                    pair = tuple(sorted(random_path[::2]))
-                    pair_sets[pair] += 1
-                if random_path[1] not in d[random_path[3]]:
-                    pair = tuple(sorted(random_path[1::2]))
-                    pair_sets[pair] += 1
+                for _ in xrange(2):
+                    if random_path[_] not in d[random_path[_+2]]:
+                        pair = tuple(sorted(random_path[_::2]))
+                        pair_sets[pair] += 1
 
             pair_sets = sorted(pair_sets.items(), key=operator.itemgetter(1), reverse = True)
             with open(result_file, 'w') as f:
@@ -315,7 +305,15 @@ class Global_Scoring():
             logging.info('Finished.')
 
     @staticmethod
+    @mkdir
+    @run_time
     def karz_method():
+        '''
+        This methid is used to calculate the rankings using the karz method. 
+        '''
+
+    @staticmethod
+    def page_rank():
         pass
 
 class Consensus_Method():

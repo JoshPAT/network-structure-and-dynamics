@@ -18,7 +18,7 @@ Supervised learning
 - Add argparse functions to make debug and test easiler.
 
 ##### Need to Improve
-
+- 
 
 #### Chinese Version:
 ---
@@ -29,3 +29,9 @@ Supervised learning
 - 添加命令行控制功能，优化命令行调试过程。
 
 ##### 需改进
+- 改进项目结构，采用扁平化架构模式。
+- 引用Cython库，提高python性能。(Maybe)
+
+##### 心得体会
+- 如果获取数据变量的计算量不大，该数据变量可设为全局变量, 也可重新计算。
+- 使用sum(x for x in list) 代替 x += x，可以更快。
