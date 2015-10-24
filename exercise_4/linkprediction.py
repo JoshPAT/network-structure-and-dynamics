@@ -5,6 +5,8 @@ __author__ = 'Quan zhou'
 
 import os, shutil, argparse, logging, functools, time, collections, math, itertools, random, operator
 import numpy as np
+from scipy.sparse import *
+
 
 # a dectorator used to compute run time in a fucntion
 def run_time(func):
@@ -13,9 +15,11 @@ def run_time(func):
         start_time = time.time()
         result = func(*args, **kw)
         end_time = time.time()
-        print "Computation Time of %s: %s" % (func.__name__.capitalize(), end_time - start_time)
+        print "Computation Time of %s: %s" % \
+              (func.__name__.capitalize(), end_time - start_time)
         return result
     return wrapper
+
 
 # A Fast Way to create a dir
 def mkdir(func):
@@ -102,7 +106,10 @@ def data_preparation(args):
         os.makedirs('outputs')
 
         # This is much faster way to get the data, not check one by one
-        randlist = np.random.randint(len(orginal_links), size=num_missed_links + num_missed_links/4)
+        randlist = np.random.randint(
+            len(orginal_links), 
+            size=num_missed_links + num_missed_links/4
+            )
         randlist = np.unique(randlist)[:num_missed_links]
         missed_links = orginal_links[randlist]
         sample_links = np.delete(orginal_links, randlist, axis=0)
@@ -179,6 +186,7 @@ class Local_Scoring():
             pair_sets = collections.defaultdict(float)
             for i,j in itertools.combinations(dict.fromkeys(d), 2):
                 if d[j] and d[i]:
+                    # i, j are not connected
                     if j not in d[i]:
                         # Union = d[i] | d[j]
                         intersection = d[i] & d[j]
@@ -186,7 +194,11 @@ class Local_Scoring():
                             scores = len(intersection) * 1.0 / len(d[i] | d[j])
                             pair_sets[tuple([i,j])] = scores
 
-            pair_sets = sorted(pair_sets.items(), key=operator.itemgetter(1), reverse = True)
+            pair_sets = sorted(
+                pair_sets.items(), 
+                key=operator.itemgetter(1), 
+                reverse = True
+                )
 
             with open(result_file, 'w') as f:
                 for links, scores in pair_sets:
@@ -201,7 +213,6 @@ class Local_Scoring():
         This method is used to calculate the adamic_adar_ranking.
 
         '''
-        
         result_file = os.path.join(dirpath, 'results.txt')
         
         if not os.path.exists(result_file):
@@ -211,6 +222,7 @@ class Local_Scoring():
             pair_sets = collections.defaultdict(float)
             for i,j in itertools.combinations(dict.fromkeys(d), 2):
                 if d[j] and d[i]:
+                    # i, j are not connected
                     if j not in d[i]:
                         # Union = d[i] | d[j]
                         intersection = d[i] & d[j]
@@ -220,7 +232,11 @@ class Local_Scoring():
                                 for internode in intersection)
                             pair_sets[tuple([i,j])] = scores
 
-            pair_sets = sorted(pair_sets.items(), key=operator.itemgetter(1), reverse = True)
+            pair_sets = sorted(
+                pair_sets.items(), 
+                key=operator.itemgetter(1), 
+                reverse = True
+                )
 
             with open(result_file, 'w') as f:
                 for links, scores in pair_sets:
@@ -244,6 +260,7 @@ class Local_Scoring():
             pair_sets = collections.defaultdict(float)
             for i,j in itertools.combinations(dict.fromkeys(d), 2):
                 if d[j] and d[i]:
+                    # i, j are not connected
                     if j not in d[i]:
                         # Union = d[i] | d[j]
                         intersection = d[i] & d[j]
@@ -253,7 +270,11 @@ class Local_Scoring():
                                 for internode in intersection)
                             pair_sets[tuple([i,j])] = scores
 
-            pair_sets = sorted(pair_sets.items(), key=operator.itemgetter(1), reverse = True)
+            pair_sets = sorted(
+                pair_sets.items(), 
+                key=operator.itemgetter(1),
+                reverse = True
+                )
 
             with open(result_file, 'w') as f:
                 for links, scores in pair_sets:
@@ -297,8 +318,15 @@ class Global_Scoring():
                     if random_path[_] not in d[random_path[_+2]]:
                         pair = tuple(sorted(random_path[_::2]))
                         pair_sets[pair] += 1
+                if random_path[0] not in d[random_path[3]]:
+                    pair = tuple(sorted([random_path[0], random_path[3]]))
+                    pair_sets[pair] += 1
 
-            pair_sets = sorted(pair_sets.items(), key=operator.itemgetter(1), reverse = True)
+            pair_sets = sorted(
+                pair_sets.items(), 
+                key=operator.itemgetter(1), 
+                reverse = True
+                )
             with open(result_file, 'w') as f:
                 for links, scores in pair_sets:
                     f.write("%d %d " % links + "%d\n" % scores)
@@ -311,10 +339,65 @@ class Global_Scoring():
         '''
         This methid is used to calculate the rankings using the karz method. 
         '''
+        result_file = os.path.join(dirpath, 'results.txt')
+        
+        if not os.path.exists(result_file):
+            logging.info('Start to Compute...')
 
-    @staticmethod
-    def page_rank():
-        pass
+            # Make the zero array first (n x n)
+            adj_matrix = np.zeros(
+                shape = (nodes_number + 1, nodes_number + 1),
+                dtype = np.int16
+                )
+            path_matrix = np.zeros(
+                shape = (nodes_number + 1, nodes_number + 1),
+                dtype = np.int16
+                )
+
+            # Make the adjacency matrix
+            with open('outputs/sample_links.txt', 'r') as f:
+                for line in f.readlines():
+                    i, j = line.strip().split(' ')
+                    i, j = int(i), int(j)
+                    if i != j:
+                        adj_matrix[i, j] += 1
+                        adj_matrix[j, i] += 1
+            adj_matrix = csr_matrix(adj_matrix)
+            path_matrix = csr_matrix(adj_matrix)
+
+            # SCR computes the fastest
+            adj_matrix_tmp = csr_matrix.copy(adj_matrix)
+            # from l = 2 to l = 4
+            for l in xrange(2,5):
+                # Generate the paths length equals = l
+                adj_matrix_tmp = adj_matrix_tmp * adj_matrix
+                path_matrix += 0.1 ** l * adj_matrix_tmp
+            
+            logging.info(
+                'Finished Path Computation. Start to Assign the values...'
+                )
+
+            path_matrix = path_matrix.toarray()
+            pair_sets = collections.defaultdict(int)            
+            d = nodes_edges()
+            for i,j in itertools.combinations(dict.fromkeys(d), 2):
+                # i, j are not connected
+                if path_matrix[i,j] != 0 and j not in d[i]:
+                    pair = tuple((i, j))
+                    pair_sets[pair] = path_matrix[i, j]
+            
+            logging.info('Finished Path Computation. Start to Sort...')
+
+            pair_sets = sorted(
+                pair_sets.items(), 
+                key=operator.itemgetter(1), 
+                reverse = True
+                )
+
+            with open(result_file, 'w') as f:
+                for links, scores in pair_sets:
+                    f.write("%d %d " % links + "%f\n" % scores)
+            logging.info('Finished.')
 
 class Consensus_Method():
     @staticmethod
