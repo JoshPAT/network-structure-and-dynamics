@@ -6,7 +6,8 @@ __author__ = 'Quan zhou'
 import os, shutil, argparse, logging, functools, time, collections, math, itertools, random, operator
 import numpy as np
 from scipy.sparse import *
-
+import plotly.plotly as py
+import plotly.graph_objs as go
 
 # a dectorator used to compute run time in a fucntion
 def run_time(func):
@@ -73,6 +74,14 @@ def parse_args():
               '' ",
         default=None
     )
+    parser.add_argument(
+        "-p",
+        "--plot",
+        type=str,
+        nargs="?",
+        help="Plot the Precision_Recall Plots.",
+        default=None
+    )
     return parser.parse_args()
 
 
@@ -99,7 +108,7 @@ def data_preparation(args):
     nodes_number = np.amax(orginal_links)
 
     # Reset - Delete all the files and dirs except datafile
-    if reset:
+    if reset or not os.path.exists('outputs'):
         if os.path.exists('outputs'): 
             logging.info('Deleting old files...')
             shutil.rmtree('outputs')
@@ -180,12 +189,12 @@ class Local_Scoring():
 
         if not os.path.exists(result_file):
             logging.info('Start to Compute...')
-            # Load the edges 
-            d = nodes_edges()     
+            # Load the edges
+            d  = nodes_edges()
 
             pair_sets = collections.defaultdict(float)
-            for i,j in itertools.combinations(dict.fromkeys(d), 2):
-                if d[j] and d[i]:
+            for i, j in itertools.combinations(dict.fromkeys(d), 2):            
+                if d[j] and d[i] and i != j:
                     # i, j are not connected
                     if j not in d[i]:
                         # Union = d[i] | d[j]
@@ -193,6 +202,7 @@ class Local_Scoring():
                         if intersection:                                    
                             scores = len(intersection) * 1.0 / len(d[i] | d[j])
                             pair_sets[tuple([i,j])] = scores
+            
 
             pair_sets = sorted(
                 pair_sets.items(), 
@@ -258,7 +268,7 @@ class Local_Scoring():
             # Load the edges 
             d = nodes_edges()
             pair_sets = collections.defaultdict(float)
-            for i,j in itertools.combinations(dict.fromkeys(d), 2):
+            for i, j in itertools.combinations(dict.fromkeys(d), 2):
                 if d[j] and d[i]:
                     # i, j are not connected
                     if j not in d[i]:
@@ -404,8 +414,70 @@ class Consensus_Method():
     def Bordas_method():
         pass
 
-def precision_recall_plots():
-    pass
+
+
+def precision_recall_plots(dir_name):
+    with open('outputs/missed_links.txt', 'r') as f:
+        missed_links = np.array(
+            [line.strip().split(' ') for line in f.readlines()],
+            dtype = np.int16
+            )
+        # Sort the (i, j)
+        missed_links.sort()
+    
+    pr = {}
+    tp = 0
+    test_nb = 0
+
+    dirpath = os.path.join('outputs/', dir_name, 'results.txt')
+    with open(dirpath, 'r') as f:
+        predicted_links = np.array(
+            [line.strip().split(' ') for line in f.readlines()]
+        )
+        all_number = len(predicted_links)
+        f.seek(0)
+        for line in f.readlines():
+            test_nb += 1
+            i, j, s = line.strip().split(' ')
+            i, j = int(i), int(j)
+            if i > j: i, j = j, i
+            if any(np.equal(missed_links,[i,j]).all(1)):
+                tp += 1
+            if test_nb % 5000 == 0:
+                pr[tp *1.0/ test_nb] = tp * 1.0/ all_number
+        
+        logging.info('Start to Plot...')
+
+        plotfig = collections.OrderedDict(sorted(pr.items()))
+        trace1 = go.Scatter(
+            x = plotfig.values(),
+            y = plotfig.keys(),
+            showlegend = False,
+            mode = 'lines',
+        )
+        data = [trace1]
+        layout = go.Layout(
+            title = dir_name.capitalize(),
+            autosize = True,
+            
+            xaxis = dict(
+                autorange = True,
+                #title = 'Switch Times',
+                #exponentformat='power',
+                tickangle = 10
+            ),
+            yaxis = dict(
+
+                autorange = True,
+                #title = 'clustering coefficient',
+                #exponentformat ='power',
+                tickangle = 10
+            ),
+            plot_bgcolor='rgb(238, 238, 238)',
+        )
+        fig = go.Figure(data = data, layout =layout)
+        plot_url = py.plot(fig, filename= dir_name.capitalize())
+
 
 if __name__ == '__main__':
     # Set the log level
@@ -415,11 +487,35 @@ if __name__ == '__main__':
     # Generate the data
     data_preparation(args)
     if args.method:
-        if args.method == 'lj' : Local_Scoring.jaccard_ranking()
-        if args.method == 'la' : Local_Scoring.adamic_adar_ranking()
-        if args.method == 'lr' : Local_Scoring.resource_allocation_ranking()
-        if args.method == 'gr' : Global_Scoring.random_paths_scoring()
-        if args.method == 'gk' : Global_Scoring.karz_method()
-        if args.method == 'cb' : Consensus_Method.Bordas_method()
+        if args.method == 'lj':
+            Local_Scoring.jaccard_ranking()
+        if args.method == 'la':
+            Local_Scoring.adamic_adar_ranking()
+        if args.method == 'lr':
+            Local_Scoring.resource_allocation_ranking()
+        if args.method == 'gr':
+            Global_Scoring.random_paths_scoring()
+        if args.method == 'gk':
+            Global_Scoring.karz_method()
+        if args.method == 'cb':
+            Consensus_Method.Bordas_method()
+    if args.plot:
+        if args.plot == 'lj':
+            precision_recall_plots('jaccard_ranking')
+        if args.plot == 'la':
+            precision_recall_plots('adamic_adar_ranking')
+        if args.plot == 'lr':
+            precision_recall_plots('resource_allocation_ranking')
+        if args.plot == 'gr':
+            precision_recall_plots('random_paths_scoring')
+        if args.plot == 'gk':
+            precision_recall_plots('karz_method')
+        if args.plot == 'cb':
+            precision_recall_plots('Bordas_method')
+
+
+
+
+
 
     
