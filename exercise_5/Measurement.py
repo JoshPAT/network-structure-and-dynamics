@@ -12,6 +12,7 @@ import itertools
 import collections
 import math
 import random
+import operator
 
 def run_time(func):
     '''
@@ -200,7 +201,7 @@ class Simulation(Graph):
     def __init__(self, dataname):
         super(Simulation, self).__init__(dataname)
         self.sample_nodes_edges = self._clear_inputs(dataname)
-        self.random_links_found = self.random_strategy()
+        self.random_init_edges = self.random_strategy()
 
     def _clear_inputs(self, dataname):
         '''
@@ -223,7 +224,7 @@ class Simulation(Graph):
             return True
         return False
 
-    def random_strategy(self, trials = 1000, write = False):
+    def random_strategy(self, trials = 1000, base = True):
         '''
         Return the links_found using random strategy.
         if "write" option is enabled, then it will store the result in
@@ -231,35 +232,71 @@ class Simulation(Graph):
         '''
         links_found = collections.defaultdict(list)
         i = 0
-        while i < trials:
-            u, v = random.sample(self.nodes_edges.keys(), 2)
-            i += 1
-            if self._measure_primitive(u, v):
-                links_found[i] = (u, v)
-                for w in self.nodes_edges[u]:
-                    i += 1
-                    if self._measure_primitive(w, v):
-                        links_found[i] = (v, w)
-                for w in self.nodes_edges[v]:
-                    i += 1
-                    if self._measure_primitive(u, w):
-                        links_found[i] = (u, w)
-        links_found = {k: v for k,v in links_found.iteritems() if k < trials}
-        if write:
-            with open(os.path.join(self.outputs_path, 'random_strategy'), 'w') as f:
+        while 1:
+            while i < trials:
+                u, v = random.sample(self.nodes_edges.keys(), 2)
+                i += 1
+                if self._measure_primitive(u, v):
+                    links_found[i] = (u, v)
+                    for w in self.nodes_edges[u]:
+                        i += 1
+                        if self._measure_primitive(w, v):
+                            links_found[i] = (v, w)
+                    for w in self.nodes_edges[v]:
+                        i += 1
+                        if self._measure_primitive(u, w):
+                            links_found[i] = (u, w)
+            links_found = {k: v for k,v in links_found.iteritems() if k < trials}
+            if links_found:
+                break
+        if base:
+            with open(os.path.join(self.outputs_path, 'random_base'), 'w') as f:
                 for k, v in links_found.iteritems():
                     f.write('%d %d %d\n' % (k, v[0], v[1]))
         else:
-            return links_found
-    
-    def _order_nodes(self):
-        pass
+            with open(os.path.join(self.outputs_path, 'random_strategy'), 'w') as f:
+                for k, v in links_found.iteritems():
+                    f.write('%d %d %d\n' % (k, v[0], v[1]))
+        return links_found
+
+    def _max_degree(self):
+        '''
+        Return the node number have maximal degree.
+        '''
+        return max(self.sample_nodes_edges, 
+                       key=lambda k: len(self.sample_nodes_edges[k]))
 
     def complete_strategy(self):
+        '''
+        Return 
+        '''
+        _path = os.path.join(self.outputs_path, 'complete_strategy')
+        with open(_path, 'w') as f:
+            for k, v in sorted(self.random_init_edges().iteritems()):
+                f.write('%d %d %d\n' % (k, v[0], v[1]))
+        i = 1000 #default value 1000
+        with open(_path, 'a') as f:
+            while self.sample_nodes_edges.keys():
+                _max = self._max_degree()
+                for n in self.nodes_edges.keys():
+                    if self._measure_primitive(_max, n):
+                        f.write('%d %d %d\n' % (i, _max, n))
+                    i += 1 
+                del self.sample_nodes_edges[_max]
+
+    def _max_degere(self):
         pass
 
-    def test_between_found(self):
-        pass
+    def tbf_strategy(self):
+        _path = os.path.join(self.outputs_path, 'tbf_strategy')
+        while 1:
+            intial_graphs = self.random_strategy() # apply random before the ording
+            if intial_graphs:
+                with open(_path, 'w') as f:
+                    for k, v in sorted(intial_graphs.iteritems()):
+                        f.write('%d %d %d\n' % (k, v[0], v[1]))
+                break
+class 
 
 
 if __name__ == '__main__':
@@ -273,6 +310,7 @@ if __name__ == '__main__':
         print 'Please input the correct abbrevations of filename'
     c = Simulation(d)
     c.graph_infos()
-    c.random_strategy(write=True)
+    c.random_strategy(base = False)
+    c.complete_strategy()
 
 
