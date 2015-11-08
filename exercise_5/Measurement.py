@@ -27,22 +27,6 @@ def run_time(func):
         return result
     return wrapper
 
-def mkdir(func):
-    '''
-    A Fast Way to create a dir
-    '''
-    @functools.wraps(func)
-    def wrapper(*args, **kw):
-        print dir(func)
-        dir_name = func.__name__
-        dirpath = os.path.join('outputs/', dir_name)
-        if not os.path.exists(dirpath):
-            os.makedirs(dirpath)
-        result = func(*args, **kw)
-        return result
-    return wrapper
-
-
 DATASETS = {'o': 'Flickr', 't': 'Flickr-test', 'i' : 'inet' }
 
 def nCr(n,r):
@@ -62,6 +46,15 @@ def parse_args():
         help="Select the dataset your want to create the file. \
                 Default is 'Flickr-test'",
         default='t'
+    )
+    parser.add_argument(
+        "-m",
+        "--method",
+        nargs='?',
+        type=str,
+        help="Select the dataset your want to create the file. \
+                Default is 'Random'",
+        default='m'
     )
     return parser.parse_args()
 
@@ -190,7 +183,6 @@ class Graph(object):
                 triangles += 1
         return triangles/ float(trials)
 
-
     def graph_infos(self):
         '''
         Print all the characteriscs of the graph.
@@ -203,27 +195,71 @@ class Graph(object):
         print 'Approximations of verage clustering coefficient: %0.11f' % self._average_clustering()
         #print 'transitive ratio: %0.11f\naverage clustering coefficient: %0.11f' % (self._compute_triangle_values())
 
-class Simulation(object):
+class Simulation(Graph):
 
     def __init__(self, dataname):
+        super(Simulation, self).__init__(dataname)
+        self.sample_nodes_edges = self._clear_inputs(dataname)
+        self.random_links_found = self.random_strategy()
+
+    def _clear_inputs(self, dataname):
+        '''
+        Return the bare structure of the original graphs and Make a new dir to save.
+        '''
+        self.outputs_path = os.path.join('outputs/', dataname, 'strategies/')
+        if not os.path.exists(self.outputs_path):
+            os.makedirs(self.outputs_path)
+        sample_nodes_edges = {k: [] for k in self.nodes_edges}
+        return sample_nodes_edges
+
+    def _measure_primitive(self, u, v):
+        '''
+        Return True if there is a link between node u and node v.
+        Update the links in bare structure.
+        '''
+        if v in self.nodes_edges[u] and v not in self.sample_nodes_edges[u]:
+            self.sample_nodes_edges[u].append(v)
+            self.sample_nodes_edges[v].append(u)
+            return True
+        return False
+
+    def random_strategy(self, trials = 1000, write = False):
+        '''
+        Return the links_found using random strategy.
+        if "write" option is enabled, then it will store the result in
+        format {t, u, v} t stands for the times when links(u,v) is found.
+        '''
+        links_found = collections.defaultdict(list)
+        i = 0
+        while i < trials:
+            u, v = random.sample(self.nodes_edges.keys(), 2)
+            i += 1
+            if self._measure_primitive(u, v):
+                links_found[i] = (u, v)
+                for w in self.nodes_edges[u]:
+                    i += 1
+                    if self._measure_primitive(w, v):
+                        links_found[i] = (v, w)
+                for w in self.nodes_edges[v]:
+                    i += 1
+                    if self._measure_primitive(u, w):
+                        links_found[i] = (u, w)
+        links_found = {k: v for k,v in links_found.iteritems() if k < trials}
+        if write:
+            with open(os.path.join(self.outputs_path, 'random_strategy'), 'w') as f:
+                for k, v in links_found.iteritems():
+                    f.write('%d %d %d\n' % (k, v[0], v[1]))
+        else:
+            return links_found
+    
+    def _order_nodes(self):
         pass
 
-
-    def measure_primitive(self):
+    def complete_strategy(self):
         pass
 
-    @staticmethod
-    def random_strategy():
+    def test_between_found(self):
         pass
-
-    @staticmethod
-    def simple_strategy():
-        pass
-
-    @staticmethod
-    def refine_strategt():
-        pass
-
 
 
 if __name__ == '__main__':
@@ -235,7 +271,8 @@ if __name__ == '__main__':
         d = DATASETS[cmd.dataset]
     except KeyError:
         print 'Please input the correct abbrevations of filename'
-    c = Graph(d)
+    c = Simulation(d)
     c.graph_infos()
+    c.random_strategy(write=True)
 
 
