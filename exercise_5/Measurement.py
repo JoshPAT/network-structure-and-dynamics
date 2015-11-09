@@ -202,6 +202,10 @@ class Simulation(Graph):
         super(Simulation, self).__init__(dataname)
         self.sample_nodes_edges = self._clear_inputs(dataname)
         self.random_init_edges = self.random_strategy()
+        self.node_in_order = list(self._degree_in_order()[0])
+        self.degree_in_order = list(self._degree_in_order()[1])
+        print self.node_in_order
+        print self.degree_in_order
 
     def _clear_inputs(self, dataname):
         '''
@@ -227,7 +231,10 @@ class Simulation(Graph):
     def random_strategy(self, trials = 1000, base = True):
         '''
         Return the links_found using random strategy.
-        if "write" option is enabled, then it will store the result in
+        If "base" option is enabled, it means data generated is random base.
+        Else it means data generated is for random_strategy.
+        
+        After that both will store the result in
         format {t, u, v} t stands for the times when links(u,v) is found.
         '''
         links_found = collections.defaultdict(list)
@@ -259,6 +266,11 @@ class Simulation(Graph):
                     f.write('%d %d %d\n' % (k, v[0], v[1]))
         return links_found
 
+    def _degree_in_order(self):
+        degree_in_order = {k: len(v) for k,v in self.sample_nodes_edges.iteritems()}
+        l = sorted(degree_in_order.iteritems(), key=operator.itemgetter(1), reverse=True)
+        return zip(*l)
+
     def _max_degree(self):
         '''
         Return the node number have maximal degree.
@@ -268,13 +280,13 @@ class Simulation(Graph):
 
     def complete_strategy(self):
         '''
-        Return 
+        Predicts the links by the maximal degree of the node.
         '''
         _path = os.path.join(self.outputs_path, 'complete_strategy')
         with open(_path, 'w') as f:
-            for k, v in sorted(self.random_init_edges().iteritems()):
+            for k, v in sorted(self.random_init_edges.iteritems()):
                 f.write('%d %d %d\n' % (k, v[0], v[1]))
-        i = 1000 #default value 1000
+        i = 1000 # default value 1000
         with open(_path, 'a') as f:
             while self.sample_nodes_edges.keys():
                 _max = self._max_degree()
@@ -286,20 +298,30 @@ class Simulation(Graph):
 
     def _max_degere(self):
         pass
+        
 
     def tbf_strategy(self):
+        '''
+        Predicts the links by the maximal sum of two nodes.
+        '''
         _path = os.path.join(self.outputs_path, 'tbf_strategy')
-        while 1:
-            intial_graphs = self.random_strategy() # apply random before the ording
-            if intial_graphs:
-                with open(_path, 'w') as f:
-                    for k, v in sorted(intial_graphs.iteritems()):
-                        f.write('%d %d %d\n' % (k, v[0], v[1]))
-                break
-class 
+        with open(_path, 'w') as f:
+            for k, v in sorted(self.random_init_edges.iteritems()):
+                f.write('%d %d %d\n' % (k, v[0], v[1]))
+        i = 1000 # default value 1000
+        with open(_path, 'a') as f:
+            while self.sample_nodes_edges.keys():
+                _max = self._max_degree()
+                for n in self.nodes_edges.keys():
+                    if self._measure_primitive(_max, n):
+                        f.write('%d %d %d\n' % (i, _max, n))
+                    i += 1 
+                del self.sample_nodes_edges[_max]
+
 
 
 if __name__ == '__main__':
+    import copy
     # Set the log level
     logging.basicConfig(level=logging.INFO)
     cmd = parse_args()
@@ -310,7 +332,9 @@ if __name__ == '__main__':
         print 'Please input the correct abbrevations of filename'
     c = Simulation(d)
     c.graph_infos()
+    c1, c2 = copy.copy(c), copy.copy(c),
     c.random_strategy(base = False)
-    c.complete_strategy()
+    c1.complete_strategy()
+    c2.tbf_strategy()
 
 
