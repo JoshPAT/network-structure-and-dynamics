@@ -13,6 +13,8 @@ import collections
 import math
 import random
 import operator
+import plotly.plotly as py
+import plotly.graph_objs as go
 
 def run_time(func):
     '''
@@ -49,13 +51,26 @@ def parse_args():
         default='t'
     )
     parser.add_argument(
-        "-m",
-        "--method",
+        "-r",
+        "--random",
         nargs='?',
-        type=str,
-        help="Select the dataset your want to create the file. \
-                Default is 'Random'",
-        default='m'
+        type=int,
+        help="",
+        default=2000
+    )
+    parser.add_argument(
+        "-t",
+        "--tests",
+        nargs='?',
+        type=int,
+        help="",
+        default=500000
+    )
+    parser.add_argument(
+        "-p",
+        "--plot",
+        action="store_true",
+        help="",
     )
     return parser.parse_args()
 
@@ -198,14 +213,13 @@ class Graph(object):
 
 class Simulation(Graph):
 
-    def __init__(self, dataname):
+    def __init__(self, dataname, random_trials):
         super(Simulation, self).__init__(dataname)
+        self.dataname = dataname
         self.sample_nodes_edges = self._clear_inputs(dataname)
-        self.random_init_edges = self.random_strategy()
-        self.node_in_order = list(self._degree_in_order()[0])
-        self.degree_in_order = list(self._degree_in_order()[1])
-        print self.node_in_order
-        print self.degree_in_order
+        self.random_init_edges = self.random_strategy(trials=random_trials) 
+        self.node_in_order = dict(enumerate(self._degree_in_order()[0]))
+        self.degree_in_order = dict(enumerate(self._degree_in_order()[1]))
 
     def _clear_inputs(self, dataname):
         '''
@@ -238,8 +252,8 @@ class Simulation(Graph):
         format {t, u, v} t stands for the times when links(u,v) is found.
         '''
         links_found = collections.defaultdict(list)
-        i = 0
         while 1:
+            i = 0
             while i < trials:
                 u, v = random.sample(self.nodes_edges.keys(), 2)
                 i += 1
@@ -258,15 +272,18 @@ class Simulation(Graph):
                 break
         if base:
             with open(os.path.join(self.outputs_path, 'random_base'), 'w') as f:
-                for k, v in links_found.iteritems():
+                for k, v in sorted(links_found.iteritems()):
                     f.write('%d %d %d\n' % (k, v[0], v[1]))
         else:
             with open(os.path.join(self.outputs_path, 'random_strategy'), 'w') as f:
-                for k, v in links_found.iteritems():
+                for k, v in sorted(links_found.iteritems()):
                     f.write('%d %d %d\n' % (k, v[0], v[1]))
         return links_found
 
     def _degree_in_order(self):
+        '''
+        Return the lists nodes and lists of nodes' degree in desending order.
+        '''
         degree_in_order = {k: len(v) for k,v in self.sample_nodes_edges.iteritems()}
         l = sorted(degree_in_order.iteritems(), key=operator.itemgetter(1), reverse=True)
         return zip(*l)
@@ -278,7 +295,7 @@ class Simulation(Graph):
         return max(self.sample_nodes_edges, 
                        key=lambda k: len(self.sample_nodes_edges[k]))
 
-    def complete_strategy(self):
+    def complete_strategy(self, trials = 0):
         '''
         Predicts the links by the maximal degree of the node.
         '''
@@ -295,30 +312,156 @@ class Simulation(Graph):
                         f.write('%d %d %d\n' % (i, _max, n))
                     i += 1 
                 del self.sample_nodes_edges[_max]
+                if i > trials:
+                    break
 
-    def _max_degere(self):
-        pass
+    def _alter_twonodes(self, index_1, index_2):
+        '''
+        Change the position of nodes according to their degree.
+        Move the position of bigger degree to left.
+        '''
+
+        self.degree_in_order[index_1] += 1
+        self.degree_in_order[index_2] += 1
         
+        index_left = index_1 - 1
+        while index_left > 1:
+            if self.degree_in_order[index_1] > self.degree_in_order[index_left]:
+                index_left -= 1
+            else:
+                break
+        if index_left < index_1 - 1:
+            self.degree_in_order[index_1], self.degree_in_order[index_left] \
+                            = self.degree_in_order[index_left], self.degree_in_order[index_1] 
+            self.node_in_order[index_1], self.node_in_order[index_left] \
+                            = self.node_in_order[index_left], self.node_in_order[index_1]
+            index_1, index_left = index_left, index_1
+            logging.info("There is a switch between (%d, %d)" , index_1, index_left)
+        index_left = index_2 -1
+        while index_left > 1:
+            if self.degree_in_order[index_2] > self.degree_in_order[index_left]:
+                index_left -= 1
+            else:
+                break
+        if index_left < index_2 -1:
+            self.degree_in_order[index_2], self.degree_in_order[index_left] \
+                            = self.degree_in_order[index_left], self.degree_in_order[index_2] 
+            self.node_in_order[index_2], self.node_in_order[index_left] \
+                            = self.node_in_order[index_left], self.node_in_order[index_2]
+        return index_1, index_2
 
-    def tbf_strategy(self):
+    def tbf_strategy(self, trials = 0):
         '''
         Predicts the links by the maximal sum of two nodes.
         '''
+        #print self.node_in_order
+        #print self.degree_in_order
         _path = os.path.join(self.outputs_path, 'tbf_strategy')
         with open(_path, 'w') as f:
             for k, v in sorted(self.random_init_edges.iteritems()):
                 f.write('%d %d %d\n' % (k, v[0], v[1]))
         i = 1000 # default value 1000
+        tested_links = self.sample_nodes_edges.copy()
+        index_1, index_2 = 0, 1 # start from 1,2
+        max_len = len(self.degree_in_order)
         with open(_path, 'a') as f:
-            while self.sample_nodes_edges.keys():
-                _max = self._max_degree()
-                for n in self.nodes_edges.keys():
-                    if self._measure_primitive(_max, n):
-                        f.write('%d %d %d\n' % (i, _max, n))
-                    i += 1 
-                del self.sample_nodes_edges[_max]
+            while 1:
+                if i > trials:
+                    break
+                if self.degree_in_order[index_1] > 0:
+                    u = self.node_in_order[index_1]
+                    v = self.node_in_order[index_2]
+                    if u not in tested_links[v]:
+                        if self._measure_primitive(u, v):
+                            f.write('%d %d %d\n' % (i, u, v))
+                        index_1, index_2 = self._alter_twonodes(index_1, index_2)
+                        tested_links[u].append(v)
+                        tested_links[v].append(u)
+                        i += 1
+                    index_2 += 1
+                    if index_2 >= max_len or self.degree_in_order[index_2] < 1:
+                        index_1 = index_1 + 1
+                        index_2 = index_1 + 1
+                        if index_2 >= max_len:
+                            break
+                else:
+                    break
+
+class Plot(object):
+    '''
+    Used to plot the figures.
+    '''
+    def __init__(self, name):
+        self.path = os.path.join('outputs/', DATASETS[name], 'strategies/')
+        self.x_y = [self.find_x_y(f) for f in ['random_strategy', 'complete_strategy', 'tbf_strategy',]]
+        self.efficiency_plots()
+
+    def find_x_y(self, f):
+        x_y = {}
+        find_number = 0
+        test_number = 0
+        with open(os.path.join(self.path, f), 'r') as f:
+            for line in f.readlines():
+                find_number += 1
+                if find_number % 10 == 0:
+                    test_number = int(line.split(' ')[0])
+                    x_y[test_number] = find_number 
+        return zip(*sorted(x_y.iteritems()))
+
+    def efficiency_plots(self):
+        logging.info('Start to Plot...')
+
+        trace0 = go.Scatter(
+            x = self.x_y[0][0],
+            y = self.x_y[0][1],
+            showlegend = False,
+            mode = 'lines',
+        )
+        trace1 = go.Scatter(
+            x = self.x_y[1][0],
+            y = self.x_y[1][1],
+            showlegend = False,
+            mode = 'lines',
+        )
+        trace2 = go.Scatter(
+            x = self.x_y[2][0],
+            y = self.x_y[2][1],
+            showlegend = False,
+            mode = 'lines',
+        )
+
+        data = [trace0, trace1, trace2]
+        layout = go.Layout(
+            autosize = True,
+            xaxis = dict(
+                autorange = True,
+                #title = 'Switch Times',
+                exponentformat='power',
+                tickangle = 10
+            ),
+            yaxis = dict(
+                autorange = True,
+                #title = 'clustering coefficient',
+                exponentformat ='power',
+                tickangle = 10
+            ),
+            plot_bgcolor='rgb(238, 238, 238)',
+        )
+        fig = go.Figure(data = data, layout =layout)
+        plot_url = py.plot(fig, filename= 'TEST'.capitalize())
 
 
+
+def lazy_type(base_trials, tests):
+    '''
+    Just a simple fucntion to alter less and control more in commandline.
+    '''
+    c = Simulation(d, base_trials)
+    c.graph_infos()
+    c1, c2 = copy.deepcopy(c), copy.deepcopy(c)
+    c.random_strategy(trials=tests, base = False)
+    c1.complete_strategy(trials=tests)
+    c2.tbf_strategy(trials=tests)
 
 if __name__ == '__main__':
     import copy
@@ -326,15 +469,15 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     cmd = parse_args()
     # Find the data
-    try:
-        d = DATASETS[cmd.dataset]
-    except KeyError:
-        print 'Please input the correct abbrevations of filename'
-    c = Simulation(d)
-    c.graph_infos()
-    c1, c2 = copy.copy(c), copy.copy(c),
-    c.random_strategy(base = False)
-    c1.complete_strategy()
-    c2.tbf_strategy()
+    if not cmd.plot:
+        try:
+            d = DATASETS[cmd.dataset]
+            lazy_type(cmd.random, cmd.tests)
+        except KeyError:
+            print 'Please input the correct abbrevations of filename'
+        except ValueError:
+            print 'random numbers or tests numbers are not right'
+    else:
+        Plot(cmd.dataset)
 
 
