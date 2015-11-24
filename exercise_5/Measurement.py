@@ -217,7 +217,7 @@ class Simulation(Graph):
         super(Simulation, self).__init__(dataname)
         self.dataname = dataname
         self.sample_nodes_edges = self._clear_inputs(dataname)
-        self.random_init_edges = self.random_strategy(trials=random_trials) 
+        self.random_init_edges, self.start_i = self.random_phase(trials=random_trials)
         self.node_in_order = dict(enumerate(self._degree_in_order()[0]))
         self.degree_in_order = dict(enumerate(self._degree_in_order()[1]))
 
@@ -242,7 +242,29 @@ class Simulation(Graph):
             return True
         return False
 
-    def random_strategy(self, trials = 1000, base = True):
+    def _pure_random_process(self, i, links_found):
+        u, v = random.sample(self.nodes_edges.keys(), 2)
+        i += 1
+        if self._measure_primitive(u, v):
+            links_found[i] = (u, v)
+        return i, links_found
+
+    def _v_random_process(self, i, links_found):
+        u, v = random.sample(self.nodes_edges.keys(), 2)
+        i += 1
+        if self._measure_primitive(u, v):
+            links_found[i] = (u, v)
+            for w in self.nodes_edges.keys():
+                i += 1
+                if self._measure_primitive(w, v):
+                    links_found[i] = (v, w)
+            for w in self.nodes_edges.keys():
+                i += 1
+                if self._measure_primitive(u, w):
+                    links_found[i] = (u, w)
+        return i, links_found
+
+    def random_phase(self, trials = 1000):
         '''
         Return the links_found using random strategy.
         If "base" option is enabled, it means data generated is random base.
@@ -252,33 +274,40 @@ class Simulation(Graph):
         format {t, u, v} t stands for the times when links(u,v) is found.
         '''
         links_found = collections.defaultdict(list)
+        links_need = len(self.processed_dataset) * 0.1 / 100
         while 1:
             i = 0
             while i < trials:
-                u, v = random.sample(self.nodes_edges.keys(), 2)
-                i += 1
-                if self._measure_primitive(u, v):
-                    links_found[i] = (u, v)
-                    for w in self.nodes_edges[u]:
-                        i += 1
-                        if self._measure_primitive(w, v):
-                            links_found[i] = (v, w)
-                    for w in self.nodes_edges[v]:
-                        i += 1
-                        if self._measure_primitive(u, w):
-                            links_found[i] = (u, w)
+                i, links_found = self._v_random_process(i, links_found)
             links_found = {k: v for k,v in links_found.iteritems() if k < trials}
-            if links_found:
+            if len(links_found.keys()) > links_need:
                 break
-        if base:
-            with open(os.path.join(self.outputs_path, 'random_base'), 'w') as f:
-                for k, v in sorted(links_found.iteritems()):
-                    f.write('%d %d %d\n' % (k, v[0], v[1]))
-        else:
-            with open(os.path.join(self.outputs_path, 'random_strategy'), 'w') as f:
-                for k, v in sorted(links_found.iteritems()):
-                    f.write('%d %d %d\n' % (k, v[0], v[1]))
-        return links_found
+            else:
+                while len(links_found.keys()) < links_need:
+                    i, links_found = self._v_random_process(i, links_found)
+                break
+        with open(os.path.join(self.outputs_path, 'random_base'), 'w') as f:
+            for k, v in sorted(links_found.iteritems()):
+                f.write('%d %d %d\n' % (k, v[0], v[1]))
+        return links_found, i
+
+    def random_strategy(self, start_i, trials = 0):
+        i = start_i
+        links_found = self.random_init_edges
+        while i < trials:
+            i, links_found = self._pure_random_process(i, links_found)
+        with open(os.path.join(self.outputs_path, 'random_strategy'), 'w') as f:
+            for k, v in sorted(links_found.iteritems()):
+                f.write('%d %d %d\n' % (k, v[0], v[1]))
+
+    def v_random_strategy(self, start_i, trials = 0):
+        i = start_i
+        links_found = self.random_init_edges
+        while i < trials:
+            i, links_found = self._v_random_process(i, links_found)
+        with open(os.path.join(self.outputs_path, 'v_random_strategy'), 'w') as f:
+            for k, v in sorted(links_found.iteritems()):
+                f.write('%d %d %d\n' % (k, v[0], v[1]))
 
     def _degree_in_order(self):
         '''
@@ -295,7 +324,7 @@ class Simulation(Graph):
         return max(self.sample_nodes_edges, 
                        key=lambda k: len(self.sample_nodes_edges[k]))
 
-    def complete_strategy(self, trials = 0):
+    def complete_strategy(self, start_i, trials = 0):
         '''
         Predicts the links by the maximal degree of the node.
         '''
@@ -303,7 +332,7 @@ class Simulation(Graph):
         with open(_path, 'w') as f:
             for k, v in sorted(self.random_init_edges.iteritems()):
                 f.write('%d %d %d\n' % (k, v[0], v[1]))
-        i = 1000 # default value 1000
+        i = start_i # default value 1000
         with open(_path, 'a') as f:
             while self.sample_nodes_edges.keys():
                 _max = self._max_degree()
@@ -350,7 +379,7 @@ class Simulation(Graph):
                             = self.node_in_order[index_left], self.node_in_order[index_2]
         return index_1, index_2
 
-    def tbf_strategy(self, trials = 0):
+    def tbf_strategy(self, start_i, trials = 0):
         '''
         Predicts the links by the maximal sum of two nodes.
         '''
@@ -360,7 +389,7 @@ class Simulation(Graph):
         with open(_path, 'w') as f:
             for k, v in sorted(self.random_init_edges.iteritems()):
                 f.write('%d %d %d\n' % (k, v[0], v[1]))
-        i = 1000 # default value 1000
+        i = start_i # default value 1000
         tested_links = self.sample_nodes_edges.copy()
         index_1, index_2 = 0, 1 # start from 1,2
         max_len = len(self.degree_in_order)
@@ -393,7 +422,7 @@ class Plot(object):
     '''
     def __init__(self, name):
         self.path = os.path.join('outputs/', DATASETS[name], 'strategies/')
-        self.x_y = [self.find_x_y(f) for f in ['random_strategy', 'complete_strategy', 'tbf_strategy',]]
+        self.x_y = [self.find_x_y(f) for f in ['random_strategy', 'complete_strategy', 'tbf_strategy','v_random_strategy']]
         self.efficiency_plots()
 
     def find_x_y(self, f):
@@ -414,23 +443,33 @@ class Plot(object):
         trace0 = go.Scatter(
             x = self.x_y[0][0],
             y = self.x_y[0][1],
-            showlegend = False,
+            #showlegend = False,
             mode = 'lines',
+            name = 'random_strategy',
         )
         trace1 = go.Scatter(
             x = self.x_y[1][0],
             y = self.x_y[1][1],
-            showlegend = False,
+            #showlegend = False,
             mode = 'lines',
+            name = 'complete_strategy',
         )
         trace2 = go.Scatter(
             x = self.x_y[2][0],
             y = self.x_y[2][1],
-            showlegend = False,
+            #showlegend = False,
             mode = 'lines',
+            name = 'tbf_strategy',
+        )
+        trace3 = go.Scatter(
+            x = self.x_y[3][0],
+            y = self.x_y[3][1],
+            #showlegend = False,
+            mode = 'lines',
+            name = 'v_random_strategy',
         )
 
-        data = [trace0, trace1, trace2]
+        data = [trace0, trace1, trace2, trace3]
         layout = go.Layout(
             autosize = True,
             xaxis = dict(
@@ -445,7 +484,7 @@ class Plot(object):
                 exponentformat ='power',
                 tickangle = 10
             ),
-            plot_bgcolor='rgb(238, 238, 238)',
+            #plot_bgcolor='rgb(238, 238, 238)',
         )
         fig = go.Figure(data = data, layout =layout)
         plot_url = py.plot(fig, filename= 'TEST'.capitalize())
@@ -458,10 +497,11 @@ def lazy_type(base_trials, tests):
     '''
     c = Simulation(d, base_trials)
     c.graph_infos()
-    c1, c2 = copy.deepcopy(c), copy.deepcopy(c)
-    c.random_strategy(trials=tests, base = False)
-    c1.complete_strategy(trials=tests)
-    c2.tbf_strategy(trials=tests)
+    c1, c2, c3 = copy.deepcopy(c), copy.deepcopy(c), copy.deepcopy(c)
+    c.random_strategy(c.start_i,trials=tests)
+    c1.complete_strategy(c.start_i, trials=tests)
+    c2.tbf_strategy(c.start_i,trials=tests)
+    c3.v_random_strategy(c.start_i,trials=tests)
 
 if __name__ == '__main__':
     import copy
