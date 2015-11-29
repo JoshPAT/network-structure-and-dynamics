@@ -7,6 +7,7 @@
 - Fix the 'Graph' class in previous exericse. Make it more concise and esay reading.
 - Automatically create result file based on datasets. 
 - Add argparse functions to make debug and test easiler.
+- Fix the untested links functions.
 
 ##### 
 - 
