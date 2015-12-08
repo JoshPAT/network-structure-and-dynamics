@@ -32,7 +32,7 @@ class Plot(object):
     def __init__(self, name):
         self.graph_name = DATASETS[name]
         self.path = os.path.join('outputs/', self.graph_name, 'strategies/')
-        self.x_y = [self.find_x_y(f) for f in ['random_strategy', 'complete_strategy', 'tbf_strategy','v_random_strategy']]
+        self.x_y = [self.find_x_y(f) for f in ['random_strategy', 'complete_strategy', 'tbf_strategy','v_random_strategy', 'combined_strategy']]
         self.calculate_efficiency()
         self.efficiency_plots()
 
@@ -84,8 +84,15 @@ class Plot(object):
             mode = 'lines',
             name = 'v_random_strategy',
         )
+        trace4 = go.Scatter(
+            x = self.x_y[4][0],
+            y = self.x_y[4][1],
+            #showlegend = False,
+            mode = 'lines',
+            name = 'combined_strategy',
+        )
 
-        data = [trace0, trace1, trace2, trace3]
+        data = [trace0, trace1, trace2, trace3, trace4]
         layout = go.Layout(
             autosize = True,
             xaxis = dict(
