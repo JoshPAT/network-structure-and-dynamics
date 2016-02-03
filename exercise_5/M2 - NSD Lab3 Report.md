@@ -78,6 +78,7 @@ The table below takes the random phase until it finds 0.1% of the existing links
 | Combined strategy (random 1000) |  215944  |1.04 | 23.07| 0.137 |23.33 |
 
 From the fisrt table, we can observe that:
+
 1. Complete strategy have the highest efficiency, since its relative efficiency and normalized efficiency is the highest among all the strategies. 
 2. The links that Combined strategy finds are the highest among among all the strategies. Although TBF strategy tests less time, it still has good relative efficiency and normalized efficiency. 
 3. Relative efficiency of Random strategy is around 1, which is exactly what we have expected because it ratio of two random phase is 1. 
